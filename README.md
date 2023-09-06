@@ -25,6 +25,13 @@ The library is currently accessed through Python calls (interactive REPL, script
 
 Only numpy is used extensively, but the other libraries offer more convenient implementations of some of the statistical operations.
 
+As the `lzcompression` package is not yet published, you'll need to install it in local mode. The easiest way to do this is to:
+- Clone this repository and change into it
+- Ensure your appropriate environment is active
+- `pip install -e .` to make `lzcompression` an installed package for the environment
+
+We'll publish to `pypi` once we're out of alpha and have picked a good name.
+
 ## Example
 
 Load the observed non-negative matrix `X` as a numpy array:
