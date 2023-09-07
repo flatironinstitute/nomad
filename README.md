@@ -38,25 +38,34 @@ Load the observed non-negative matrix `X` as a numpy array:
 
 ```python
 from lzcompression.gauss_model import compress_sparse_matrix_probabilistic
+import logging
 
-# Consider improving readability:
-# np.setprintoptions(precision=5, linewidth=150)
+# "info"-level log messages in the library won't be displayed unless the
+# caller explicitly allows them--this is by design, since it's bad to let
+# library code override its caller's logging strategy!
+logging.basicConfig(level=logging.INFO)
 
-nonnegative_matrix_X = np.array([...]) # or load from file, etc.
 # NOTE: Ensure that this uses a float dtype!
+# If you try to use this method on an integer array, it
+# isn't going to work very well!
+nonnegative_matrix_X = np.array([...]) # or load from file, etc.
 
 target_rank = 5         # as per your domain expertise
 
 (low_rank_L, model_variance) = compress_sparse_matrix_probabilistic(
     nonnegative_matrix_X,
     target_rank,
-    print_running_loss=True,
-    print_running_likelihood=True
+    verbose=True
 )
 
-# use low_rank_L as appropriate
+# use low_rank_L as appropriate for your application
 
 # To visualize recovery of X, assuming target_rank was high enough to do so:
+#   First improve readability of printed numpy arrays:
+np.set_printoptions(precision=5, linewidth=150)
+
+#   then pass the low-rank estimate through a ReLU nonlinearity and compare
+#   its result to the input sparse matrix:
 relu_L = np.copy(low_rank_L)
 relu_L[relu_L < 0] = 0
 print(relu_L)
@@ -79,16 +88,11 @@ In addition to the two required parameters (the sparse nonnegative matrix and th
 difference between `X` and the current estimate) is below this value.
 - `manual_max_iterations`: If set, the algorithm will use this number as the maximum number of iterations
 (instead of running for 100 * target_rank iterations).
-- `print_running_loss`: if set to `True`, will display a running loss after every iteration.
-- `print_running_likelihood`: if set to `True`, will display the likelihood of the low-rank estimate matrix `L` during
-each iteration, based on the underlying model variance.
+- `verbose`: if set to `True` (and the caller's logging config allows it), will log a running record of estimation performance.
 
 Regardless of settings, the estimator will generate a warning if the iteration-over-iteration likelihood was observed
 to decrease during the course of estimation. (This is quite common due to numerics noise once a good estimate has been
 reached.)
-
-By default, the current implementation will also provide performance statistics, but this will likely be streamlined
-to proper logging before full public release.
 
 
 ## References
