@@ -35,9 +35,10 @@ def compress_sparse_matrix_probabilistic(
     if verbose:
         logger.setLevel(logging.INFO)
     logger.info(f"\tInitiating run, {target_rank=}, {tolerance=}")
-    run_start_time = time.perf_counter()
     if np.any(sparse_matrix[sparse_matrix < 0]):
         raise ValueError("Sparse input matrix must be nonnegative.")
+
+    run_start_time = time.perf_counter()
 
     low_rank_candidate_L = initialize_low_rank_candidate(sparse_matrix, initialization)
     model_variance_sigma_squared = float(np.var(sparse_matrix))
@@ -97,14 +98,12 @@ def compress_sparse_matrix_probabilistic(
 
     init_e = loop_start_time - run_start_time
     loop_e = end_time - loop_start_time
-    # avoid divide-by-zero error if caller bypasses the main loop
-    if elapsed_iterations == 0:
-        elapsed_iterations = 1
+    per_loop_e = loop_e / (elapsed_iterations if elapsed_iterations > 0 else 1)
     logger.info(
         f"{elapsed_iterations} total iterations, final loss {loss} likelihood {last_iter_likelihood}"
     )
     logger.info(
-        f"\tInitialization took {init_e} loop took {loop_e} overall ({loop_e/elapsed_iterations}/ea)"
+        f"\tInitialization took {init_e} loop took {loop_e} overall ({per_loop_e}/ea)"
     )
 
     return (low_rank_candidate_L, model_variance_sigma_squared)

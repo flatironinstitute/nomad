@@ -1,6 +1,6 @@
 import numpy as np
 from unittest.mock import Mock, patch
-from pytest import raises
+from pytest import raises, LogCaptureFixture
 
 from lzcompression.model_free import (
     construct_utility,
@@ -96,6 +96,14 @@ def test_compress_sparse_matrix_stops_when_error_within_tolerance(
     # Called 2x: first result identified as above tolerance, second result below tolerance
     assert mock_find_lr.call_count == 2
     assert mock_make_z.call_count == 2
+
+
+def test_compress_sparse_matrix_honors_verbosity(caplog: LogCaptureFixture) -> None:
+    sparse_matrix = np.eye(3)
+    _ = compress_sparse_matrix(sparse_matrix, 1, manual_max_iterations=0)
+    assert "Initiating run" not in caplog.text
+    _ = compress_sparse_matrix(sparse_matrix, 1, manual_max_iterations=0, verbose=True)
+    assert "Initiating run" in caplog.text
 
 
 # def test_compress_sparse_matrix_works() -> None:
