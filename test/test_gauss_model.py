@@ -1,6 +1,6 @@
 import numpy as np
 from unittest.mock import Mock, patch
-from pytest import raises
+from pytest import raises, LogCaptureFixture
 import itertools
 from typing import Any
 
@@ -105,69 +105,18 @@ def test_compress_sparse_matrix_probabilistic_stops_when_error_within_tolerance(
     assert mock_makeZ.call_count == 2
 
 
-### These two are super brittle and not terribly informative, should probably just cut.
-@patch("lzcompression.gauss_model.compute_loss")
-@patch("lzcompression.gauss_model.construct_posterior_model_matrix_Z")
-@patch("lzcompression.gauss_model.find_low_rank")
-@patch("builtins.print")
-def test_compress_sparse_matrix_probabilistic_honors_running_loss_printout(
-    mock_print: Mock, mock_lr: Mock, mock_makeZ: Mock, mock_loss: Mock
-) -> None:
-    tolerance = 5
-    target_rank = 5
-    sparse_matrix = np.eye(3)
-
-    mock_lr.return_value = np.ones(sparse_matrix.shape)
-    mock_makeZ.return_value = np.zeros(sparse_matrix.shape)
-    mock_loss.side_effect = [tolerance + 1, tolerance - 1]
-    _ = compress_sparse_matrix_probabilistic(
-        sparse_matrix, target_rank, tolerance=tolerance, print_running_loss=True
-    )
-    loss_print = mock_print.call_args_list[1]  # First call is the parameters report
-    assert loss_print[0] == (f"\t\tIteration 1: loss={tolerance + 1}",)
-
-
-### These two are super brittle and not terribly informative, should probably just cut.
-@patch("lzcompression.gauss_model.compute_loss")
 @patch("lzcompression.gauss_model.low_rank_matrix_log_likelihood")
 @patch("lzcompression.gauss_model.construct_posterior_model_matrix_Z")
 @patch("lzcompression.gauss_model.find_low_rank")
-@patch("builtins.print")
-def test_compress_sparse_matrix_probabilistic_honors_running_likelihood_printout(
-    mock_print: Mock,
-    mock_lr: Mock,
-    mock_makeZ: Mock,
-    mock_likelihood: Mock,
-    mock_loss: Mock,
-) -> None:
-    tolerance = 5
-    target_rank = 5
-    sparse_matrix = np.eye(3)
-
-    mock_lr.return_value = np.ones(sparse_matrix.shape)
-    mock_makeZ.return_value = np.zeros(sparse_matrix.shape)
-    mock_likelihood.return_value = 12
-    mock_loss.side_effect = [tolerance + 1, tolerance - 1]
-    _ = compress_sparse_matrix_probabilistic(
-        sparse_matrix, target_rank, tolerance=tolerance, print_running_likelihood=True
-    )
-    loss_print = mock_print.call_args_list[1]
-    assert loss_print[0] == (
-        f"\t\tIteration 1: likelihood={mock_likelihood.return_value}",
-    )
-
-
-# And this is still a little brittle--ought to use better support for regex-style checking of response.
-@patch("lzcompression.gauss_model.low_rank_matrix_log_likelihood")
-@patch("lzcompression.gauss_model.construct_posterior_model_matrix_Z")
-@patch("lzcompression.gauss_model.find_low_rank")
-@patch("builtins.print")
 def test_compress_sparse_matrix_probabilistic_warns_on_nondecreasing_likelihood(
-    mock_print: Mock, mock_lr: Mock, mock_makeZ: Mock, mock_likelihood: Mock
+    mock_lr: Mock, mock_makeZ: Mock, mock_likelihood: Mock, caplog: LogCaptureFixture
 ) -> None:
     target_rank = 5
     sparse_matrix = np.eye(3)
 
+    # python mocks don't have an easy way to say "give me these X values, then a default"
+    # (instead they start throwing errors or something)
+    # so we define a function that does that, and tell the mock to use that function.
     vals = itertools.chain([10.0, 9.0], itertools.repeat(5.0))
 
     def se(*args: list[Any]) -> float:
@@ -178,17 +127,42 @@ def test_compress_sparse_matrix_probabilistic_warns_on_nondecreasing_likelihood(
     mock_lr.return_value = np.ones(sparse_matrix.shape)
     mock_makeZ.return_value = np.zeros(sparse_matrix.shape)
     mock_likelihood.side_effect = se
+    _ = compress_sparse_matrix_probabilistic(sparse_matrix, target_rank)
+    assert "likelihood decreased" in caplog.text
+
+
+def test_compress_sparse_matrix_probabilistic_engages_verbosity(
+    caplog: LogCaptureFixture,
+) -> None:
+    sparse_matrix = np.eye(3)
+    _ = compress_sparse_matrix_probabilistic(sparse_matrix, 1, manual_max_iterations=0)
+    assert "Initiating run" not in caplog.text
     _ = compress_sparse_matrix_probabilistic(
-        sparse_matrix, target_rank, print_running_likelihood=False
+        sparse_matrix, 1, manual_max_iterations=0, verbose=True
     )
-    loss_print = mock_print.call_args_list[-1]
-    assert loss_print[0] == (
-        f"\tWARNING: Likelihood decreased in one or more iterations.",
-    )
+    assert "Initiating run" in caplog.text
 
 
-# def test_compress_sparse_matrix_probabilistic_works() -> None:
-#     raise NotImplementedError
+def test_compress_sparse_matrix_probabilistic_works() -> None:
+    sparse_matrix = np.array(
+        [
+            [5.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [1.0, 4.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 3.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 4.0, 1.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 5.0],
+        ]
+    )
+    (l, _) = compress_sparse_matrix_probabilistic(sparse_matrix, 6)
+    relu_l = np.copy(l)
+    relu_l[relu_l < 0] = 0
+    assert np.allclose(relu_l, sparse_matrix)
 
 
 @patch("lzcompression.gauss_model.pdf_to_cdf_ratio_psi")

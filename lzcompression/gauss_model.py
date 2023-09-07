@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Tuple
 import time
+import logging
 
 from lzcompression.types import (
     FloatArrayType,
@@ -18,8 +19,9 @@ from lzcompression.util import (
     pdf_to_cdf_ratio_psi,
 )
 
+logger = logging.getLogger(__name__)
 
-# TODO: Remove the print statements, use more sophisticated logging
+
 def compress_sparse_matrix_probabilistic(
     sparse_matrix: FloatArrayType,
     target_rank: int,
@@ -27,12 +29,13 @@ def compress_sparse_matrix_probabilistic(
     svd_strategy: SVDStrategy = SVDStrategy.RANDOM_TRUNCATED,
     initialization: InitializationStrategy = InitializationStrategy.BROADCAST_MEAN,
     tolerance: float | None = None,
-    print_running_loss: bool = False,
-    print_running_likelihood: bool = False,
     manual_max_iterations: int | None = None,
+    verbose: bool = False,
 ) -> Tuple[FloatArrayType, float]:
+    if verbose:
+        logger.setLevel(logging.INFO)
+    logger.info(f"\tInitiating run, {target_rank=}, {tolerance=}")
     run_start_time = time.perf_counter()
-    print(f"\tInitiating run, {target_rank=}, {tolerance=}")
     if np.any(sparse_matrix[sparse_matrix < 0]):
         raise ValueError("Sparse input matrix must be nonnegative.")
 
@@ -50,7 +53,6 @@ def compress_sparse_matrix_probabilistic(
     elapsed_iterations = 0
     last_iter_likelihood = float("-inf")
     loss = float("inf")
-    likelihood_decreased = False
 
     loop_start_time = time.perf_counter()
     while elapsed_iterations < max_iterations:
@@ -80,33 +82,31 @@ def compress_sparse_matrix_probabilistic(
             sparse_matrix, low_rank_candidate_L, gamma, model_variance_sigma_squared
         )
         if likelihood < last_iter_likelihood:
-            print(
-                f"\tWARNING: Iteration {elapsed_iterations} saw decreased likelihood, from {last_iter_likelihood} to {likelihood}"
+            logger.warning(
+                f"Iteration {elapsed_iterations}: likelihood decreased, from {last_iter_likelihood} to {likelihood}"
             )
-            likelihood_decreased = True
-        if print_running_likelihood:
-            print(f"\t\tIteration {elapsed_iterations}: {likelihood=}")
         last_iter_likelihood = likelihood
 
         ### Monitor loss:
         loss = compute_loss(utility_matrix_Z, low_rank_candidate_L, LossType.FROBENIUS)
-        if print_running_loss:
-            print(f"\t\tIteration {elapsed_iterations}: {loss=}")
+        logger.info(f"\t\tIteration {elapsed_iterations}: {loss=} {likelihood=}")
         if tolerance is not None and loss < tolerance:
             break
 
     end_time = time.perf_counter()
-    print(
-        f"Returning after {elapsed_iterations} iterations, final loss {loss} likelihood {last_iter_likelihood}"
-    )
+
     init_e = loop_start_time - run_start_time
     loop_e = end_time - loop_start_time
-    print(
+    # avoid divide-by-zero error if caller bypasses the main loop
+    if elapsed_iterations == 0:
+        elapsed_iterations = 1
+    logger.info(
+        f"{elapsed_iterations} total iterations, final loss {loss} likelihood {last_iter_likelihood}"
+    )
+    logger.info(
         f"\tInitialization took {init_e} loop took {loop_e} overall ({loop_e/elapsed_iterations}/ea)"
     )
 
-    if likelihood_decreased:
-        print(f"\tWARNING: Likelihood decreased in one or more iterations.")
     return (low_rank_candidate_L, model_variance_sigma_squared)
 
 
