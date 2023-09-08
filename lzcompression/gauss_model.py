@@ -105,8 +105,7 @@ def estimate_gaussian_model(
         )
 
         ### Monitor likelihood:
-        # TODO: RENAME low_rank_matrix_log_likelihood
-        likelihood = low_rank_matrix_log_likelihood(
+        likelihood = target_matrix_log_likelihood(
             sparse_matrix_X, model_means_L, gamma, model_variance_sigma_squared
         )
         if likelihood < last_iter_likelihood:
@@ -151,8 +150,9 @@ def get_posterior_means_Z(
     are treated as definitively known: the posterior mean must be the observed value
     of X (and the corresponding posterior variance should be 0).
 
-    For elements which are 0 in X, the posterior mean is estimated in a way to minimize
-    overall variance [EXPLAIN MORE].
+    For elements which are 0 in X, the model's expected value should be nonpositive.
+    So we estimate the posterior mean using the formula for a right-truncated
+    Gaussian.
 
     Args:
         prior_means_L: The current model means
@@ -281,7 +281,7 @@ def get_elementwise_posterior_variance_dZbar(
     return dZbar
 
 
-def low_rank_matrix_log_likelihood(
+def target_matrix_log_likelihood(
     sparse_matrix: FloatArrayType,
     prior_means_L: FloatArrayType,
     stddev_norm_lr_gamma: FloatArrayType,

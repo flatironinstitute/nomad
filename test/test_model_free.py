@@ -42,7 +42,6 @@ def test_compress_sparse_matrix_throws_if_input_has_negative_elements() -> None:
         _ = compress_sparse_matrix(bad_matrix, 4)
 
 
-# TODO: Should use a test matrix...
 @patch("lzcompression.model_free.construct_utility")
 @patch("lzcompression.model_free.find_low_rank")
 def test_compress_sparse_matrix_obeys_max_iterations(

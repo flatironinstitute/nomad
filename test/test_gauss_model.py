@@ -11,7 +11,7 @@ from lzcompression.gauss_model import (
     estimate_new_model_variance,
     get_stddev_normalized_matrix_gamma,
     get_elementwise_posterior_variance_dZbar,
-    low_rank_matrix_log_likelihood,
+    target_matrix_log_likelihood,
 )
 
 
@@ -232,7 +232,7 @@ def test_get_elementwise_posterior_variance_dZbar_computes_variances_where_neede
     np.testing.assert_allclose(result[sparse > 0], np.zeros((3, 3))[sparse > 0])
 
 
-def test_low_rank_matrix_log_likelihood() -> None:
+def test_target_matrix_log_likelihood() -> None:
     sparse = np.eye(3)
     low_rank = (
         np.ones((3, 3)) * 2
@@ -246,5 +246,5 @@ def test_low_rank_matrix_log_likelihood() -> None:
     # we just need something identifiable for sparse's zero-valued entries
     # normal.logcdf of -1 is ~ -1.841021645, and we'll have 6 of those
     expected = (3 * -2.073106) + (6 * -1.841021645)
-    result = low_rank_matrix_log_likelihood(sparse, low_rank, stddev_norm_lr, sigma_sq)
+    result = target_matrix_log_likelihood(sparse, low_rank, stddev_norm_lr, sigma_sq)
     assert approx(result) == expected
