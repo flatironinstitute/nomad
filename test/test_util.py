@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 from unittest.mock import Mock, patch
-from pytest import raises, approx
+from pytest import approx, raises
 from typing import cast
 
 from lzcompression.types import InitializationStrategy, SVDStrategy, LossType
@@ -14,10 +14,7 @@ from lzcompression.util import (
     _find_low_rank_exact_truncated,
     find_low_rank,
     pdf_to_cdf_ratio_psi,
-    get_stddev_normalized_matrix_gamma,
     compute_loss,
-    get_elementwise_posterior_variance_dZbar,
-    low_rank_matrix_log_likelihood,
 )
 
 
@@ -68,51 +65,6 @@ def test_pdf_to_cdf_ratio_psi() -> None:
     matrix = np.eye(2) * crossover
     res2 = pdf_to_cdf_ratio_psi(matrix)
     np.testing.assert_allclose(res2, expected)
-
-
-def test_get_stddev_normalized_matrix_gamma() -> None:
-    input = np.eye(3) * 16
-    sigma_squared = 4
-    expected_result = np.eye(3) * 8
-    res = get_stddev_normalized_matrix_gamma(input, sigma_squared)
-    np.testing.assert_allclose(expected_result, res)
-
-
-def test_get_elementwise_posterior_variance_dZbar_uses_0_variance_for_known_values() -> (
-    None
-):
-    sparse = np.eye(3)
-    var = 1.0
-    model = np.array(range(9)).reshape((3, 3)) * 0.1
-    res = get_elementwise_posterior_variance_dZbar(sparse, var, model)
-    np.testing.assert_allclose(res[sparse > 0], np.zeros((3, 3))[sparse > 0])
-    a = res[sparse == 0]
-    b = sparse[sparse == 0]
-    c = model[sparse == 0]
-    for i in range(len(a)):
-        assert a[i] != b[i]
-        assert a[i] != c[i]
-
-
-# This isn't a great test by itself
-def test_get_elementwise_posterior_variance_dZbar_computes_variances_where_needed() -> (
-    None
-):
-    sparse = np.eye(3)
-    var = 2.0
-    stddev_normalized_model_matrix = np.array(range(9)).reshape((3, 3)) * 0.1
-    # fmt: off
-    expected_result = np.array([
-        [0.72676046, 0.68430569, 0.6441387],
-        [0.60622898, 0.57052543, 0.53696081],
-        [0.50545572, 0.47592198, 0.4482657]
-    ])
-    # fmt: on
-    result = get_elementwise_posterior_variance_dZbar(
-        sparse, var, stddev_normalized_model_matrix
-    )
-    np.testing.assert_allclose(result[sparse == 0], expected_result[sparse == 0])
-    np.testing.assert_allclose(result[sparse > 0], np.zeros((3, 3))[sparse > 0])
 
 
 #### Losses
@@ -171,24 +123,6 @@ def test_compute_loss_throws_on_bad_loss_type() -> None:
     b = a
     with raises(ValueError, match="Unrecognized"):
         _ = compute_loss(a, b, cast(LossType, -5))
-
-
-def test_low_rank_matrix_log_likelihood() -> None:
-    sparse = np.eye(3)
-    low_rank = (
-        np.ones((3, 3)) * 2
-    )  # this is not actually low rank but that doesn't matter
-    sigma_sq = 9
-    # this will result in us taking logpdf(1, loc=2, scale=3) for the 1s in the
-    # identity matrix. That's 3 values at ~ -2.073106 each.
-    stddev_norm_lr = np.ones(
-        (3, 3)
-    )  # obviously not the actual std-dev-normalized values of low_rank
-    # we just need something identifiable for sparse's zero-valued entries
-    # normal.logcdf of -1 is ~ -1.841021645, and we'll have 6 of those
-    expected = (3 * -2.073106) + (6 * -1.841021645)
-    result = low_rank_matrix_log_likelihood(sparse, low_rank, stddev_norm_lr, sigma_sq)
-    assert approx(result) == expected
 
 
 #### SVD

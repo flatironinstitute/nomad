@@ -1,16 +1,19 @@
 # Final library name TK
 
-This library implements minimally lossy matrix decomposition for sparse nonnegative matrices, as described in Saul (2022). Given a sparse
-nonnegative matrix **X**, it returns a low-rank matrix **L** of known target rank *r*. Applying a
+This library implements methods to facilitate minimally lossy matrix decomposition for sparse nonnegative matrices, under the
+paradigm described in Saul (2022).
+
+In the problem setting, given a sparse nonnegative matrix **X**, we would like to return a low-rank matrix **L** of known
+target rank *r*. Applying a
 [ReLU nonlinearity](https://en.wikipedia.org/wiki/Rectifier_(neural_networks)) to **L** allows lossless recovery of **X**.
 
-Two methods of estimating the low-rank reprsentation **L** are currently offered:
-a straightforward model-free method, and a method based on modeling **X** as a nonnegative realization of a latent Gaussian model.
-Both methods operate in an iterative fashion analogous to expectation-maximization or *k*-means clustering.
+Two methods of estimating the low-rank representation **L** are currently offered:
+ - a model-free method, which returns only the low-rank approximation
+ - a method which returns the means-and-variance parameters (**L**, *v*) of a Gaussian model, as described in Saul (2022)
+
+Both methods operate in an iterative fashion; the latter is particularly analogous to expectation-maximization.
 
 MORE DESCRIPTION TK
-<!-- a basic iterative method that alternates between constructing a utility matrix **Z** 
-[Singular Value Decomposition](https://en.wikipedia.org/wiki/Singular_value_decomposition) to the  -->
 
 ## Getting Started
 
@@ -37,7 +40,7 @@ We'll publish to `pypi` once we're out of alpha and have picked a good name.
 Load the observed non-negative matrix `X` as a numpy array:
 
 ```python
-from lzcompression.gauss_model import compress_sparse_matrix_probabilistic
+from lzcompression.gauss_model import estimate_gaussian_model
 import logging
 
 # "info"-level log messages in the library won't be displayed unless the
@@ -52,13 +55,13 @@ nonnegative_matrix_X = np.array([...]) # or load from file, etc.
 
 target_rank = 5         # as per your domain expertise
 
-(low_rank_L, model_variance) = compress_sparse_matrix_probabilistic(
+(model_means_L, model_variance) = estimate_gaussian_model(
     nonnegative_matrix_X,
     target_rank,
     verbose=True
 )
 
-# use low_rank_L as appropriate for your application
+# use model_means_L as appropriate for your application
 
 # To visualize recovery of X, assuming target_rank was high enough to do so:
 #   First improve readability of printed numpy arrays:
@@ -66,14 +69,14 @@ np.set_printoptions(precision=5, linewidth=150)
 
 #   then pass the low-rank estimate through a ReLU nonlinearity and compare
 #   its result to the input sparse matrix:
-relu_L = np.copy(low_rank_L)
+relu_L = np.copy(model_means_L)
 relu_L[relu_L < 0] = 0
 print(relu_L)
 ```
 
 ### Additional Features
 
-The main entry point for the model-based low-rank matrix estimation is `lzcompression.gauss_model.compress_sparse_matrix_probabilistic`.
+The main entry point for the model-based low-rank matrix estimation is `lzcompression.gauss_model.estimate_gaussian_model`.
 In addition to the two required parameters (the sparse nonnegative matrix and the target rank), the following options are exposed:
 
 - `svd_strategy`: Strategy to use for SVD step during iteration. Supported options:

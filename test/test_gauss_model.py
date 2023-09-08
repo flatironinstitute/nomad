@@ -1,18 +1,21 @@
 import numpy as np
 from unittest.mock import Mock, patch
-from pytest import raises, LogCaptureFixture
+from pytest import approx, raises, LogCaptureFixture
 import itertools
 from typing import Any
 
 from lzcompression.types import InitializationStrategy, SVDStrategy, LossType
 from lzcompression.gauss_model import (
-    compress_sparse_matrix_probabilistic,
-    construct_posterior_model_matrix_Z,
+    estimate_gaussian_model,
+    get_posterior_means_Z,
     estimate_new_model_variance,
+    get_stddev_normalized_matrix_gamma,
+    get_elementwise_posterior_variance_dZbar,
+    low_rank_matrix_log_likelihood,
 )
 
 
-def test_compress_sparse_matrix_probabilistic_throws_on_negative_elements() -> None:
+def test_estimate_gaussian_model_throws_on_negative_elements() -> None:
     # fmt: off
     bad_matrix = np.array(
         [[3, 2,  2],
@@ -20,13 +23,13 @@ def test_compress_sparse_matrix_probabilistic_throws_on_negative_elements() -> N
     )
     # fmt: on
     with raises(ValueError, match="nonnegative"):
-        _ = compress_sparse_matrix_probabilistic(bad_matrix, 4)
+        _ = estimate_gaussian_model(bad_matrix, 4)
 
 
 @patch("lzcompression.gauss_model.compute_loss")
 @patch("lzcompression.gauss_model.find_low_rank")
-@patch("lzcompression.gauss_model.construct_posterior_model_matrix_Z")
-def test_compress_sparse_matrix_probabilistic_obeys_max_iterations(
+@patch("lzcompression.gauss_model.get_posterior_means_Z")
+def test_estimate_gaussian_model_obeys_max_iterations(
     mock_makeZ: Mock, mock_lr: Mock, mock_loss: Mock
 ) -> None:
     target_rank = 5
@@ -38,7 +41,7 @@ def test_compress_sparse_matrix_probabilistic_obeys_max_iterations(
     mock_makeZ.return_value = np.ones(sparse.shape)
     mock_loss.return_value = tolerance + 1
 
-    (result, _) = compress_sparse_matrix_probabilistic(sparse, target_rank)
+    (result, _) = estimate_gaussian_model(sparse, target_rank)
     np.testing.assert_allclose(result, mock_lr.return_value)
     assert mock_loss.call_count == max_iter
     assert mock_makeZ.call_count == max_iter
@@ -47,9 +50,9 @@ def test_compress_sparse_matrix_probabilistic_obeys_max_iterations(
 
 @patch("lzcompression.gauss_model.compute_loss")
 @patch("lzcompression.gauss_model.find_low_rank")
-@patch("lzcompression.gauss_model.construct_posterior_model_matrix_Z")
+@patch("lzcompression.gauss_model.get_posterior_means_Z")
 @patch("lzcompression.gauss_model.initialize_low_rank_candidate")
-def test_compress_sparse_matrix_probabilistic_honors_strategy_choices(
+def test_estimate_gaussian_model_honors_strategy_choices(
     mock_init: Mock, mock_makeZ: Mock, mock_lr: Mock, mock_loss: Mock
 ) -> None:
     target_rank = 1
@@ -60,11 +63,11 @@ def test_compress_sparse_matrix_probabilistic_honors_strategy_choices(
     mock_makeZ.return_value = np.ones(sparse.shape)
     mock_loss.return_value = 1
 
-    _ = compress_sparse_matrix_probabilistic(sparse, target_rank)
+    _ = estimate_gaussian_model(sparse, target_rank)
     assert mock_init.call_args.args[-1] == InitializationStrategy.BROADCAST_MEAN
     assert mock_lr.call_args.args[-1] == SVDStrategy.RANDOM_TRUNCATED
 
-    _ = compress_sparse_matrix_probabilistic(
+    _ = estimate_gaussian_model(
         sparse,
         target_rank,
         svd_strategy=SVDStrategy.EXACT_TRUNCATED,
@@ -73,17 +76,15 @@ def test_compress_sparse_matrix_probabilistic_honors_strategy_choices(
     assert mock_init.call_args.args[-1] == InitializationStrategy.COPY
     assert mock_lr.call_args.args[-1] == SVDStrategy.EXACT_TRUNCATED
 
-    _ = compress_sparse_matrix_probabilistic(
-        sparse, target_rank, svd_strategy=SVDStrategy.FULL
-    )
+    _ = estimate_gaussian_model(sparse, target_rank, svd_strategy=SVDStrategy.FULL)
     assert mock_lr.call_args.args[-1] == SVDStrategy.FULL
 
 
 @patch("lzcompression.gauss_model.compute_loss")
 @patch("lzcompression.gauss_model.estimate_new_model_variance")
-@patch("lzcompression.gauss_model.construct_posterior_model_matrix_Z")
+@patch("lzcompression.gauss_model.get_posterior_means_Z")
 @patch("lzcompression.gauss_model.find_low_rank")
-def test_compress_sparse_matrix_probabilistic_stops_when_error_within_tolerance(
+def test_estimate_gaussian_model_stops_when_error_within_tolerance(
     mock_lr: Mock, mock_makeZ: Mock, mock_var: Mock, mock_loss: Mock
 ) -> None:
     tolerance = 5
@@ -95,7 +96,7 @@ def test_compress_sparse_matrix_probabilistic_stops_when_error_within_tolerance(
     mock_var.return_value = 5
     mock_loss.side_effect = [tolerance + 1, tolerance - 1]
 
-    (result, var) = compress_sparse_matrix_probabilistic(
+    (result, var) = estimate_gaussian_model(
         sparse_matrix, target_rank, tolerance=tolerance
     )
     np.testing.assert_allclose(result, mock_lr.return_value)
@@ -106,9 +107,9 @@ def test_compress_sparse_matrix_probabilistic_stops_when_error_within_tolerance(
 
 
 @patch("lzcompression.gauss_model.low_rank_matrix_log_likelihood")
-@patch("lzcompression.gauss_model.construct_posterior_model_matrix_Z")
+@patch("lzcompression.gauss_model.get_posterior_means_Z")
 @patch("lzcompression.gauss_model.find_low_rank")
-def test_compress_sparse_matrix_probabilistic_warns_on_nondecreasing_likelihood(
+def test_estimate_gaussian_model_warns_on_nondecreasing_likelihood(
     mock_lr: Mock, mock_makeZ: Mock, mock_likelihood: Mock, caplog: LogCaptureFixture
 ) -> None:
     target_rank = 5
@@ -127,23 +128,21 @@ def test_compress_sparse_matrix_probabilistic_warns_on_nondecreasing_likelihood(
     mock_lr.return_value = np.ones(sparse_matrix.shape)
     mock_makeZ.return_value = np.zeros(sparse_matrix.shape)
     mock_likelihood.side_effect = se
-    _ = compress_sparse_matrix_probabilistic(sparse_matrix, target_rank)
+    _ = estimate_gaussian_model(sparse_matrix, target_rank)
     assert "likelihood decreased" in caplog.text
 
 
-def test_compress_sparse_matrix_probabilistic_engages_verbosity(
+def test_estimate_gaussian_model_honors_verbosity(
     caplog: LogCaptureFixture,
 ) -> None:
     sparse_matrix = np.eye(3)
-    _ = compress_sparse_matrix_probabilistic(sparse_matrix, 1, manual_max_iterations=0)
+    _ = estimate_gaussian_model(sparse_matrix, 1, manual_max_iterations=0)
     assert "Initiating run" not in caplog.text
-    _ = compress_sparse_matrix_probabilistic(
-        sparse_matrix, 1, manual_max_iterations=0, verbose=True
-    )
+    _ = estimate_gaussian_model(sparse_matrix, 1, manual_max_iterations=0, verbose=True)
     assert "Initiating run" in caplog.text
 
 
-def test_compress_sparse_matrix_probabilistic_works() -> None:
+def test_estimate_gaussian_model_works() -> None:
     sparse_matrix = np.array(
         [
             [5.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -159,20 +158,20 @@ def test_compress_sparse_matrix_probabilistic_works() -> None:
             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 5.0],
         ]
     )
-    (l, _) = compress_sparse_matrix_probabilistic(sparse_matrix, 6)
+    (l, _) = estimate_gaussian_model(sparse_matrix, 6)
     relu_l = np.copy(l)
     relu_l[relu_l < 0] = 0
     assert np.allclose(relu_l, sparse_matrix)
 
 
 @patch("lzcompression.gauss_model.pdf_to_cdf_ratio_psi")
-def test_construct_posterior_model_matrix_Z(mock_psi: Mock) -> None:
+def test_construct_posterior_means_matrix_Z(mock_psi: Mock) -> None:
     mock_psi.side_effect = lambda x: x
     sparse = np.eye(3)
     low_rank = np.ones(sparse.shape) * 10
     stddev_norm = np.ones(sparse.shape) * 3
     sigma_sq = 16
-    res = construct_posterior_model_matrix_Z(low_rank, sparse, stddev_norm, sigma_sq)
+    res = get_posterior_means_Z(low_rank, sparse, stddev_norm, sigma_sq)
     expected = np.eye(3)
     expected[expected == 0] = 22.0
     np.testing.assert_allclose(res, expected)
@@ -187,3 +186,65 @@ def test_estimate_new_model_variance() -> None:
     expected = 11.0
     result = estimate_new_model_variance(utility, lr, var)
     assert result == expected
+
+
+def test_get_stddev_normalized_matrix_gamma() -> None:
+    input = np.eye(3) * 16
+    sigma_squared = 4
+    expected_result = np.eye(3) * 8
+    res = get_stddev_normalized_matrix_gamma(input, sigma_squared)
+    np.testing.assert_allclose(expected_result, res)
+
+
+def test_get_elementwise_posterior_variance_dZbar_uses_0_variance_for_known_values() -> (
+    None
+):
+    sparse = np.eye(3)
+    var = 1.0
+    model = np.array(range(9)).reshape((3, 3)) * 0.1
+    res = get_elementwise_posterior_variance_dZbar(sparse, var, model)
+    np.testing.assert_allclose(res[sparse > 0], np.zeros((3, 3))[sparse > 0])
+    a = res[sparse == 0]
+    b = sparse[sparse == 0]
+    c = model[sparse == 0]
+    for i in range(len(a)):
+        assert a[i] != b[i]
+        assert a[i] != c[i]
+
+
+def test_get_elementwise_posterior_variance_dZbar_computes_variances_where_needed() -> (
+    None
+):
+    sparse = np.eye(3)
+    var = 2.0
+    stddev_normalized_model_matrix = np.array(range(9)).reshape((3, 3)) * 0.1
+    # fmt: off
+    expected_result = np.array([
+        [0.72676046, 0.68430569, 0.6441387],
+        [0.60622898, 0.57052543, 0.53696081],
+        [0.50545572, 0.47592198, 0.4482657]
+    ])
+    # fmt: on
+    result = get_elementwise_posterior_variance_dZbar(
+        sparse, var, stddev_normalized_model_matrix
+    )
+    np.testing.assert_allclose(result[sparse == 0], expected_result[sparse == 0])
+    np.testing.assert_allclose(result[sparse > 0], np.zeros((3, 3))[sparse > 0])
+
+
+def test_low_rank_matrix_log_likelihood() -> None:
+    sparse = np.eye(3)
+    low_rank = (
+        np.ones((3, 3)) * 2
+    )  # this is not actually low rank but that doesn't matter
+    sigma_sq = 9
+    # this will result in us taking logpdf(1, loc=2, scale=3) for the 1s in the
+    # identity matrix. That's 3 values at ~ -2.073106 each.
+    stddev_norm_lr = np.ones(
+        (3, 3)
+    )  # obviously not the actual std-dev-normalized values of low_rank
+    # we just need something identifiable for sparse's zero-valued entries
+    # normal.logcdf of -1 is ~ -1.841021645, and we'll have 6 of those
+    expected = (3 * -2.073106) + (6 * -1.841021645)
+    result = low_rank_matrix_log_likelihood(sparse, low_rank, stddev_norm_lr, sigma_sq)
+    assert approx(result) == expected

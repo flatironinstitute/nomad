@@ -23,13 +23,38 @@ def compress_sparse_matrix(
     *,
     strategy: SVDStrategy = SVDStrategy.RANDOM_TRUNCATED,
     tolerance: float | None = None,
-    verbose: bool = False,
     manual_max_iterations: int | None = None,
+    verbose: bool = False,
 ) -> FloatArrayType:
+    """Estimate a low-rank approximation of a nonnegative sparse matrix.
+
+    This is a more basic implementation than the one described in Saul (2022). The implementation
+    in this method does not build an underlying model, but instead just alternates between
+    constructing a utility matrix Z that enforces the non-zero values of the sparse matrix, and
+    using SVD on Z to create a candidate low-rank matrix L. The algorithm terminates either when
+    overall loss is below a tolerance (if specified) or when a maximum iteration count is reached,
+    the maximum being either a manually-set value or 100 * the target rank.
+
+    Args:
+        sparse_matrix: The sparse nonnegative matrix to decompose ("X")
+        target_rank: The target rank of the low-rank representation.
+        strategy (optional): Strategy to use for SVD. Defaults to SVDStrategy.RANDOM_TRUNCATED.
+        tolerance (optional): Loss tolerance for the reconstruction (defaults to None). If set,
+            the algorithm will terminate once overall loss between Z and the candidate low-rank
+            representation L has dropped below this level.
+        manual_max_iterations (optional): If set, will override the default maximum iteration count
+            (of 100 * the target rank). Defaults to None.
+        verbose (optional): If True, will use a logger to report performance data. Default False.
+
+    Raises:
+        ValueError: If the input matrix is not nonnegative.
+
+    Returns:
+        A low-rank approximation of the input matrix.
+    """
     if verbose:
         logger.setLevel(logging.INFO)
     logger.info(f"\tInitiating run, {target_rank=}, {tolerance=}")
-    # TODO: Check actual sparsity?
     if np.any(sparse_matrix[sparse_matrix < 0]):
         raise ValueError("Sparse input matrix must be nonnegative.")
 
@@ -79,10 +104,28 @@ def compress_sparse_matrix(
 def construct_utility(
     low_rank_matrix: FloatArrayType, base_matrix: FloatArrayType
 ) -> FloatArrayType:
-    # The construction step creates Z from a 0-matrix by:
-    #   copying the positive elements of S into the corresponding elements of Z
-    #   and the negative elements of L into any corresponding elements of Z that are still 0
-    # i.e., for each i, j: Z_ij = S_ij if S_ij > 0; else min(0, L_ij).
+    """Construct a utility matrix Z which enforces the invariants of the original
+    sparse nonnegative matrix.
+
+    Specifically, it creates Z from a 0-matrix by:
+      - Copying the positive elements of the original sparse matrix X into the
+        corresponding elements of Z
+      - Copying any negative elements of the current low-rank approximation matrix
+        L into the corresponding elements of Z, provided those elements of Z
+        were not set in the first step
+      - Any remaining elements remain 0
+
+    i.e. for each i, j: Z_ij = X is X_ij > 0, else min(0, L_ij).
+
+    Args:
+        low_rank_matrix: The current low-rank approximation of the base matrix
+        base_matrix: the sparse nonnegative matrix whose low-rank approximation
+            is being sought
+
+    Returns:
+        A utility matrix whose only positive values are the positive values in
+        the base_matrix
+    """
     conditions = [base_matrix > 0, low_rank_matrix < 0]
     choices = [base_matrix, low_rank_matrix]
     utility_matrix = np.select(conditions, choices, 0)

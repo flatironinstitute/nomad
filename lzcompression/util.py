@@ -3,12 +3,33 @@ from sklearn.decomposition import TruncatedSVD  # type: ignore
 from scipy.stats import norm as normal  # type: ignore
 from typing import cast
 
-from .types import FloatArrayType, InitializationStrategy, SVDStrategy, LossType
+from lzcompression.types import (
+    FloatArrayType,
+    InitializationStrategy,
+    SVDStrategy,
+    LossType,
+)
 
 
 def initialize_low_rank_candidate(
     sparse_matrix: FloatArrayType, method: InitializationStrategy
 ) -> FloatArrayType:
+    """Given a sparse matrix, create a starting-point guess for the low-rank representation.
+
+    Currently supported strategies are:
+     - BROADCAST_MEAN: fill the low-rank candidate with the mean of the sparse matrix's values
+     - COPY: simply return a copy of the input sparse matrix
+
+    Args:
+        sparse_matrix: The sparse nonnegative matrix input ("X")
+        method: The strategy to employ to generate the starting point
+
+    Raises:
+        ValueError: On request for an unsupported initialization strategy.
+
+    Returns:
+        Initial estimate for a low-rank representation.
+    """
     low_rank_candidate = None
     if method == InitializationStrategy.COPY:
         low_rank_candidate = np.copy(sparse_matrix)
@@ -23,59 +44,60 @@ def initialize_low_rank_candidate(
 ##### Stats Utility #####
 
 
-# TODO: As defined, this will underflow if x > ~37, or overflow if x < -2e9 or so,
+# NOTE: As defined, this will underflow if x > ~37, or overflow if x < -2e9 or so,
 # generating a warning.
 # Unclear if these values are actually realistic in practice, and whether we even
 # care, since they're only epsilon away from 0 or 1 (respectively).
 # We might wish to avoid the warning by replacing the result for known out-of-bounds inputs,
 # although numpy *should* be doing the right thing by replacing with 0/1 anyway.
 def pdf_to_cdf_ratio_psi(x: float | FloatArrayType) -> FloatArrayType:
+    """Compute the ratio of the probability density function to the
+    cumulative distribution function, with respect to a normal distribution with
+    zero mean and unit variance.
+
+    This function is abbreviated "psi" in Saul (2022).
+
+    Args:
+        x: The value (or array of values) to compute
+
+    Returns:
+        A numpy array representing this value.
+    """
     return cast(FloatArrayType, np.exp(normal.logpdf(x) - normal.logcdf(x)))
-
-
-def get_stddev_normalized_matrix_gamma(
-    unnormalized_matrix: FloatArrayType, variance_sigma_sq: float
-) -> FloatArrayType:
-    return cast(FloatArrayType, unnormalized_matrix / np.sqrt(variance_sigma_sq))
-
-
-def get_elementwise_posterior_variance_dZbar(
-    sparse_matrix: FloatArrayType,
-    model_variance: float,
-    stddevnorm_model_matrix_gamma: FloatArrayType,
-) -> FloatArrayType:
-    ## Compute matrix of elementwise posterior variance dZ-bar.
-    ## This will be:
-    ##      0 when the underlying sparse matrix is nonzero, and
-    ##      sigma^2[1 + gamma psi(-gamma) - psi(-gamma)^2] elsewhere.
-    dZbar = np.zeros(stddevnorm_model_matrix_gamma.shape)
-
-    psi_of_neg_gamma = pdf_to_cdf_ratio_psi(
-        -1 * stddevnorm_model_matrix_gamma[sparse_matrix == 0]
-    )
-    dZbar[sparse_matrix == 0] = (
-        1
-        + (
-            stddevnorm_model_matrix_gamma[sparse_matrix == 0] * psi_of_neg_gamma
-            - psi_of_neg_gamma**2
-        )
-    ) * model_variance
-
-    return dZbar
 
 
 ##### Losses and Likelihoods #####
 
 
-# DON'T USE THIS--should've been using the Frobenius norm, which is this without the squaring
+# Included for historical reasons, but better to use the Frobenius norm instead.
 def _squared_difference_loss(
     utility: FloatArrayType, candidate: FloatArrayType
 ) -> float:
+    """Compute the square of the Frobenius norm of the difference between a target
+    matrix and a utility matrix.
+
+    Args:
+        utility: A utility matrix ("Z" in algorithms from Saul (2022))
+        candidate: The target matrix being evaluated
+
+    Returns:
+        Scalar loss estimate
+    """
     loss = float(np.linalg.norm(np.subtract(utility, candidate)) ** 2)
     return loss
 
 
 def _frobenius_norm_loss(utility: FloatArrayType, candidate: FloatArrayType) -> float:
+    """Compute the Frobenius norm of the difference between a target
+    matrix and a utility matrix.
+
+    Args:
+        utility: A utility matrix ("Z" in algorithms from Saul (2022))
+        candidate: The target matrix being evaluated
+
+    Returns:
+        Scalar loss estimate
+    """
     return float(np.linalg.norm(np.subtract(utility, candidate)))
 
 
@@ -84,41 +106,36 @@ def compute_loss(
     candidate: FloatArrayType,
     type: LossType = LossType.FROBENIUS,
 ) -> float:
+    """Compute a scalar estimate of a loss between the utility matrix (Z) and
+    target matrix L.
+
+    In the model-free algorithm, L is a direct low-rank approximation;
+    Z's role is to rigorously enforce that X, the sparse nonnegative
+    matrix being approximated, can be recovered from L by applying ReLU.
+
+    In the Gaussian-model algorithm, L stores the prior means of the model
+    while Z has the posterior means; lower loss between them represents
+    improved fit to the data.
+
+    Implemented losses are the Frobenius norm, and squared Frobenius norm.
+
+    Args:
+        utility: "Z" matrix
+        candidate: "L" matrix
+        type: Type of loss to use. Defaults to LossType.FROBENIUS.
+
+    Raises:
+        ValueError: If an unsupported loss type is requested.
+
+    Returns:
+        Scalar loss value representing how well L approximates Z (and,
+        by proxy, X).
+    """
     if type == LossType.FROBENIUS:
         return _frobenius_norm_loss(utility, candidate)
     if type == LossType.SQUARED_DIFFERENCE:
         return _squared_difference_loss(utility, candidate)
     raise ValueError(f"Unrecognized loss type {type} requested.")
-
-
-def low_rank_matrix_log_likelihood(
-    sparse_matrix: FloatArrayType,
-    low_rank_matrix: FloatArrayType,
-    stddev_norm_lr_gamma: FloatArrayType,
-    variance_sigma_sq: float,
-) -> float:
-    scale = np.sqrt(variance_sigma_sq)
-    ### i.e. sum over log-likelihood matrix P_ij, where
-    ##   P_ij = log cdf (-gamma) if S = 0
-    ##   P_ij = log of 1/sqrt(2 pi sigma^2) * e^(-1/(2 sigma^2) * (S_ij - L_ij)^2) if S > 0
-    ##### [which is logpdf[(S - L)/sigma], again over sigma.]
-    ##### which in turn is just the logpdf of a gaussian of variance sigma-squared and center/mu L_ij.
-    probability_matrix = np.empty(sparse_matrix.shape)
-    probability_matrix[sparse_matrix == 0] = normal.logcdf(
-        -1 * stddev_norm_lr_gamma[sparse_matrix == 0]
-    )
-    probability_matrix[sparse_matrix > 0] = normal.logpdf(
-        sparse_matrix[sparse_matrix > 0],
-        loc=low_rank_matrix[sparse_matrix > 0],
-        scale=scale,
-    )
-
-    # # TODO: TEST THIS HARD
-    # draws = normal.rvs(
-    #     loc=low_rank_matrix[sparse_matrix > 0], scale=scale
-    # )
-    # probability_matrix[sparse_matrix > 0] = normal.logpdf(draws)
-    return float(np.sum(probability_matrix))
 
 
 ##### Matrix decomposition (SVD) #####
@@ -127,16 +144,29 @@ def low_rank_matrix_log_likelihood(
 def _find_low_rank_full(
     utility_matrix: FloatArrayType, target_rank: int, low_rank: FloatArrayType
 ) -> FloatArrayType:
+    """Compute a low-rank approximation to a matrix by doing a full SVD, then
+    manually trimming to the top n values.
+
+    Args:
+        utility_matrix: The matrix to approximate
+        target_rank: The target rank of the low-rank approximation (this determines
+            the number of values to keep)
+        low_rank: An existing numpy array whose block of memory will be reused
+            to store the result of the approximation
+
+    Returns:
+        The low_rank matrix (by reference, even though it is modified in-place).
+    """
     (U, S, Vh) = np.linalg.svd(utility_matrix)
     # SVD yields U, Sigma, and V-Transpose, with U, V orthogonal
-    # and Sigma positive, diagonal, with entries in descending order.
-    # The S from svd, however, is just a 1-d vector with the diagonal's values,
-    # so we'll need to tweak a bit.
+    # and Sigma positive diagonal, with entries in descending order.
+    # The S from this svd implementation, however, is just a 1-d vector
+    # with the diagonal's values, so we'll need to manipulate it a bit.
 
     # enforce rank r by zeroing out everything in S past the first r entries
     S[(target_rank + 1) :] = 0
 
-    # recover a complete diagonal matrix
+    # Project that vector onto a full appropriately-sized matrix
     Sigma = np.zeros((U.shape[0], Vh.shape[1]))
     np.fill_diagonal(Sigma, S)
 
@@ -145,20 +175,45 @@ def _find_low_rank_full(
     return low_rank
 
 
-# NOTE: This one actually requires you to not overestimate the real rank of the matrix.
 def _find_low_rank_random_truncated(
     utility_matrix: FloatArrayType, target_rank: int
 ) -> FloatArrayType:
+    """Compute a low-rank approximation to a matrix via random truncated SVD.
+
+    Args:
+        utility_matrix: The matrix to approximate
+        target_rank: The target rank of the low-rank approximation. Note that
+            in contrast to the full-decomposition method, the underlying algorithm
+            will throw an error if the requested rank is equal to or greater than
+            the smaller dimension of the matrix (meaning also that this algorithm
+            cannot round-trip a full-rank matrix).
+
+    Returns:
+        The low-rank approximation.
+    """
     svd = TruncatedSVD(n_components=target_rank)
     reduced = svd.fit_transform(utility_matrix)
     low_rank: FloatArrayType = svd.inverse_transform(reduced)
     return low_rank
 
 
-# NOTE: This one actually requires you to not overestimate the real rank of the matrix.
 def _find_low_rank_exact_truncated(
     utility_matrix: FloatArrayType, target_rank: int
 ) -> FloatArrayType:
+    """Compute a low-rank approximation to a matrix via arpack algorithm, which
+    performs an exact truncated SVD.
+
+    Args:
+        utility_matrix: The matrix to approximate
+        target_rank: The target rank of the low-rank approximation. Note that
+            in contrast to the full-decomposition method, the underlying algorithm
+            will throw an error if the requested rank is equal to or greater than
+            the smaller dimension of the matrix (meaning also that this algorithm
+            cannot round-trip a full-rank matrix).
+
+    Returns:
+        The low-rank approximation.
+    """
     svd = TruncatedSVD(n_components=target_rank, algorithm="arpack")
     reduced = svd.fit_transform(utility_matrix)
     low_rank: FloatArrayType = svd.inverse_transform(reduced)
@@ -171,6 +226,22 @@ def find_low_rank(
     low_rank: FloatArrayType,
     strategy: SVDStrategy,
 ) -> FloatArrayType:
+    """Compute a low-rank approximation to an input matrix, using the
+    requested SVD strategy.
+
+    Args:
+        utility_matrix: The matrix to approximate
+        target_rank: The target rank of the approximation
+        low_rank: A numpy array that will be reused as a preallocated
+            memory block by the full exact SVD deconmposition strategy
+        strategy: The SVD strategy to use (full, exact truncated, or random truncated)
+
+    Raises:
+        ValueError: If an unsupported SVD strategy is requested
+
+    Returns:
+        A numpy array storing the low-rank approximation.
+    """
     if strategy == SVDStrategy.RANDOM_TRUNCATED:
         return _find_low_rank_random_truncated(utility_matrix, target_rank)
     if strategy == SVDStrategy.EXACT_TRUNCATED:
