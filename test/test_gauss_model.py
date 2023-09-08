@@ -106,7 +106,7 @@ def test_estimate_gaussian_model_stops_when_error_within_tolerance(
     assert mock_makeZ.call_count == 2
 
 
-@patch("lzcompression.gauss_model.low_rank_matrix_log_likelihood")
+@patch("lzcompression.gauss_model.target_matrix_log_likelihood")
 @patch("lzcompression.gauss_model.get_posterior_means_Z")
 @patch("lzcompression.gauss_model.find_low_rank")
 def test_estimate_gaussian_model_warns_on_nondecreasing_likelihood(
