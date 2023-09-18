@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 import time
+from typing import Union
 
 from lzcompression.types import (
     FloatArrayType,
@@ -22,8 +23,8 @@ def compress_sparse_matrix(
     target_rank: int,
     *,
     strategy: SVDStrategy = SVDStrategy.RANDOM_TRUNCATED,
-    tolerance: float | None = None,
-    manual_max_iterations: int | None = None,
+    tolerance: Union[float, None] = None,
+    manual_max_iterations: Union[int, None] = None,
     verbose: bool = False,
 ) -> FloatArrayType:
     """Estimate a low-rank approximation of a nonnegative sparse matrix.

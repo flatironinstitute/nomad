@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.decomposition import TruncatedSVD  # type: ignore
 from scipy.stats import norm as normal  # type: ignore
-from typing import cast
+from typing import cast, Union
 
 from lzcompression.types import (
     FloatArrayType,
@@ -50,7 +50,7 @@ def initialize_low_rank_candidate(
 # care, since they're only epsilon away from 0 or 1 (respectively).
 # We might wish to avoid the warning by replacing the result for known out-of-bounds inputs,
 # although numpy *should* be doing the right thing by replacing with 0/1 anyway.
-def pdf_to_cdf_ratio_psi(x: float | FloatArrayType) -> FloatArrayType:
+def pdf_to_cdf_ratio_psi(x: Union[float, FloatArrayType]) -> FloatArrayType:
     """Compute the ratio of the probability density function to the
     cumulative distribution function, with respect to a normal distribution with
     zero mean and unit variance.

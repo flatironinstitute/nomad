@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.stats import norm as normal  # type: ignore
-from typing import cast, Tuple
+from typing import cast, Tuple, Union
 import time
 import logging
 
@@ -26,8 +26,8 @@ def estimate_gaussian_model(
     *,
     svd_strategy: SVDStrategy = SVDStrategy.RANDOM_TRUNCATED,
     initialization: InitializationStrategy = InitializationStrategy.BROADCAST_MEAN,
-    tolerance: float | None = None,
-    manual_max_iterations: int | None = None,
+    tolerance: Union[float, None] = None,
+    manual_max_iterations: Union[int, None] = None,
     verbose: bool = False,
 ) -> Tuple[FloatArrayType, float]:
     """Estimate a Gaussian model (L, v) for a sparse nonnegative matrix X.
