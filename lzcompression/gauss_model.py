@@ -61,7 +61,7 @@ def estimate_gaussian_model(
     if verbose:
         logger.setLevel(logging.INFO)
     logger.info(f"\tInitiating run, {target_rank=}, {tolerance=}")
-    if np.any(sparse_matrix_X[sparse_matrix_X < 0]):
+    if np.any(sparse_matrix_X < 0):
         raise ValueError("Sparse input matrix must be nonnegative.")
 
     run_start_time = time.perf_counter()
@@ -266,14 +266,13 @@ def get_elementwise_posterior_variance_dZbar(
 
     # Cache the pdf-to-cdf ratio for entries corresponding to
     # sparse_matrix's zero values
-    psi_of_neg_gamma = pdf_to_cdf_ratio_psi(
-        -1 * stddevnorm_matrix_gamma[sparse_matrix == 0]
-    )
+    zero_indices = sparse_matrix == 0
+    psi_of_neg_gamma = pdf_to_cdf_ratio_psi(-1 * stddevnorm_matrix_gamma[zero_indices])
     # And now populate those entries per the formula
-    dZbar[sparse_matrix == 0] = (
+    dZbar[zero_indices] = (
         1
         + (
-            stddevnorm_matrix_gamma[sparse_matrix == 0] * psi_of_neg_gamma
+            stddevnorm_matrix_gamma[zero_indices] * psi_of_neg_gamma
             - psi_of_neg_gamma**2
         )
     ) * model_variance
@@ -321,14 +320,18 @@ def target_matrix_log_likelihood(
         of observing the matrix X given the model.
     """
     scale = np.sqrt(variance_sigma_sq)
-    probability_matrix = np.empty(sparse_matrix.shape)
-    probability_matrix[sparse_matrix == 0] = normal.logcdf(
-        -1 * stddev_norm_lr_gamma[sparse_matrix == 0]
-    )
-    probability_matrix[sparse_matrix > 0] = normal.logpdf(
-        sparse_matrix[sparse_matrix > 0],
-        loc=prior_means_L[sparse_matrix > 0],
-        scale=scale,
+    zero_indices = sparse_matrix == 0
+    nonzero_indices = np.invert(zero_indices)
+    # The following at least avoids *explicitly* creating & populating an empty matrix
+    # just to sum over it
+    sum = 0.0
+    sum += np.sum(normal.logcdf(-1 * stddev_norm_lr_gamma[zero_indices]))
+    sum += np.sum(
+        normal.logpdf(
+            sparse_matrix[nonzero_indices],
+            loc=prior_means_L[nonzero_indices],
+            scale=scale,
+        )
     )
 
-    return float(np.sum(probability_matrix))
+    return float(sum)

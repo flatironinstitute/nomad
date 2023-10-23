@@ -34,8 +34,7 @@ def initialize_low_rank_candidate(
     if method == InitializationStrategy.COPY:
         low_rank_candidate = np.copy(sparse_matrix)
     elif method == InitializationStrategy.BROADCAST_MEAN:
-        mean = np.mean(sparse_matrix)
-        low_rank_candidate = np.ones(sparse_matrix.shape) * mean
+        low_rank_candidate = np.full(sparse_matrix.shape, np.mean(sparse_matrix))
     else:
         raise ValueError("Unsupported initialization strategy.")
     return low_rank_candidate

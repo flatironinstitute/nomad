@@ -69,7 +69,7 @@ def compress_sparse_matrix(
         manual_max_iterations
         if manual_max_iterations is not None
         else 100 * target_rank
-    )  # TODO: check; should we really iterate longer for higher rank?
+    )
 
     elapsed_iterations = 0
     loss = float("inf")
@@ -95,7 +95,9 @@ def compress_sparse_matrix(
     init_e = loop_start_time - run_start_time
     loop_e = end_time - loop_start_time
     per_loop_e = loop_e / (elapsed_iterations if elapsed_iterations > 0 else 1)
-    logger.info(f"{elapsed_iterations} total, final loss {loss}")
+    logger.info(
+        f"{elapsed_iterations} total, final loss {loss if tolerance is not None else 'not tracked'}"
+    )
     logger.info(
         f"\tInitialization took {init_e} loop took {loop_e} overall ({per_loop_e}/ea)"
     )
