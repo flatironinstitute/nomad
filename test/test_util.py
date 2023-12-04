@@ -29,6 +29,19 @@ def test_initialize_returns_copy() -> None:
     np.testing.assert_allclose(base_matrix, res)
 
 
+def test_initialize_returns_copy_on_known_matrix() -> None:
+    # fmt: off
+    base_matrix = np.array([
+        [ 1,  5,  0],
+        [ 0,  0,  0]
+    ])
+    # fmt: on
+    res = initialize_low_rank_candidate(
+        base_matrix, InitializationStrategy.KNOWN_MATRIX
+    )
+    np.testing.assert_allclose(base_matrix, res)
+
+
 def test_initialize_returns_mean() -> None:
     # fmt: off
     base_matrix = np.array([

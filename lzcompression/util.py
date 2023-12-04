@@ -12,7 +12,7 @@ from lzcompression.types import (
 
 
 def initialize_low_rank_candidate(
-    sparse_matrix: FloatArrayType, method: InitializationStrategy
+    input_matrix: FloatArrayType, method: InitializationStrategy
 ) -> FloatArrayType:
     """Given a sparse matrix, create a starting-point guess for the low-rank representation.
 
@@ -21,7 +21,8 @@ def initialize_low_rank_candidate(
      - COPY: simply return a copy of the input sparse matrix
 
     Args:
-        sparse_matrix: The sparse nonnegative matrix input ("X")
+        input_matrix: The sparse nonnegative matrix input ("X"). With the KNOWN_MATRIX
+            strategy, this field is instead the desired initialization value (e.g. from checkpoint)
         method: The strategy to employ to generate the starting point
 
     Raises:
@@ -32,9 +33,11 @@ def initialize_low_rank_candidate(
     """
     low_rank_candidate = None
     if method == InitializationStrategy.COPY:
-        low_rank_candidate = np.copy(sparse_matrix)
+        low_rank_candidate = np.copy(input_matrix)
     elif method == InitializationStrategy.BROADCAST_MEAN:
-        low_rank_candidate = np.full(sparse_matrix.shape, np.mean(sparse_matrix))
+        low_rank_candidate = np.full(input_matrix.shape, np.mean(input_matrix))
+    elif method == InitializationStrategy.KNOWN_MATRIX:
+        low_rank_candidate = np.copy(input_matrix)
     else:
         raise ValueError("Unsupported initialization strategy.")
     return low_rank_candidate

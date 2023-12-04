@@ -8,6 +8,7 @@ FloatArrayType = npt.NDArray[np.float_]
 class InitializationStrategy(Enum):
     COPY = 1
     BROADCAST_MEAN = 2
+    KNOWN_MATRIX = 3
 
 
 class SVDStrategy(Enum):
