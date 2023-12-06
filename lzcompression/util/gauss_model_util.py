@@ -1,138 +1,13 @@
 import numpy as np
 from scipy.stats import norm as normal  # type: ignore
-from typing import cast, Tuple, Union
-import time
-import logging
+from typing import cast
 
 from lzcompression.types import (
     FloatArrayType,
-    InitializationStrategy,
-    SVDStrategy,
-    LossType,
 )
-from lzcompression.util import (
-    initialize_low_rank_candidate,
-    compute_loss,
-    find_low_rank,
+from lzcompression.util.util import (
     pdf_to_cdf_ratio_psi,
 )
-
-logger = logging.getLogger(__name__)
-
-
-def estimate_gaussian_model(
-    sparse_matrix_X: FloatArrayType,
-    target_rank: int,
-    *,
-    svd_strategy: SVDStrategy = SVDStrategy.RANDOM_TRUNCATED,
-    initialization: InitializationStrategy = InitializationStrategy.BROADCAST_MEAN,
-    tolerance: Union[float, None] = None,
-    manual_max_iterations: Union[int, None] = None,
-    verbose: bool = False,
-) -> Tuple[FloatArrayType, float]:
-    """Estimate a Gaussian model (L, v) for a sparse nonnegative matrix X.
-
-    The algorithm uses an expectation-maximization strategy to learn the parameters of a
-    Gaussian model with means L and variance v that maximizes the likelihood of the data X.
-    We alternate between:
-        - a posterior-evaluation step, in which we compute the posterior means Z and
-          posterior variances dZ given the model (L, v) and the data X; and
-        - an update step, in which we generate a new model given the posteriors and data
-
-    Args:
-        sparse_matrix_X: The sparse nonnegative matrix to decompose
-        target_rank: The target rank of the low-rank representation
-        svd_strategy (optional): Strategy to use for SVD. Defaults to SVDStrategy.RANDOM_TRUNCATED.
-        initialization (optional): Strategy to use for initializing the low-rank representation.
-            Defaults to InitializationStrategy.BROADCAST_MEAN.
-        tolerance (optional): If set, the algorithm will terminate once the reconstruction loss of the
-            estimate falls below this level. Defaults to None.
-        manual_max_iterations (optional): If set, will override the default maximum iteration count
-            (100 * target rank). Defaults to None.
-        verbose (optional): If True, will use a logger to report performance data. Defaults to False.
-
-    Raises:
-        ValueError: If the input matrix is not nonnegative.
-
-    Returns:
-        A tuple containing the parameters (L, v) of a Gaussian model for X.
-        L is the matrix of model means, and v is its variance.
-    """
-    if verbose:
-        logger.setLevel(logging.INFO)
-    logger.info(f"\tInitiating run, {target_rank=}, {tolerance=}")
-    if np.any(sparse_matrix_X < 0):
-        raise ValueError("Sparse input matrix must be nonnegative.")
-
-    run_start_time = time.perf_counter()
-
-    model_means_L = initialize_low_rank_candidate(sparse_matrix_X, initialization)
-    model_variance_sigma_squared = float(np.var(sparse_matrix_X))
-    gamma = get_stddev_normalized_matrix_gamma(
-        model_means_L, model_variance_sigma_squared
-    )
-
-    max_iterations = (
-        manual_max_iterations
-        if manual_max_iterations is not None
-        else 100 * target_rank
-    )
-    elapsed_iterations = 0
-    last_iter_likelihood = float("-inf")
-    loss = float("inf")
-
-    loop_start_time = time.perf_counter()
-    while elapsed_iterations < max_iterations:
-        elapsed_iterations += 1
-
-        ## Posterior-evaluation step:
-        posterior_means_Z = get_posterior_means_Z(
-            model_means_L, sparse_matrix_X, gamma, model_variance_sigma_squared
-        )
-        posterior_var_dZ = get_elementwise_posterior_variance_dZbar(
-            sparse_matrix_X, model_variance_sigma_squared, gamma
-        )
-
-        ## L-update step:
-        model_means_L = find_low_rank(
-            posterior_means_Z, target_rank, model_means_L, svd_strategy
-        )
-        model_variance_sigma_squared = estimate_new_model_variance(
-            posterior_means_Z, model_means_L, posterior_var_dZ
-        )
-        gamma = get_stddev_normalized_matrix_gamma(
-            model_means_L, model_variance_sigma_squared
-        )
-
-        ### Monitor likelihood:
-        likelihood = target_matrix_log_likelihood(
-            sparse_matrix_X, model_means_L, gamma, model_variance_sigma_squared
-        )
-        if likelihood < last_iter_likelihood:
-            logger.warning(
-                f"Iteration {elapsed_iterations}: likelihood decreased, from {last_iter_likelihood} to {likelihood}"
-            )
-        last_iter_likelihood = likelihood
-
-        ### Monitor loss:
-        loss = compute_loss(posterior_means_Z, model_means_L, LossType.FROBENIUS)
-        logger.info(f"\t\tIteration {elapsed_iterations}: {loss=} {likelihood=}")
-        if tolerance is not None and loss < tolerance:
-            break
-
-    end_time = time.perf_counter()
-
-    init_e = loop_start_time - run_start_time
-    loop_e = end_time - loop_start_time
-    per_loop_e = loop_e / (elapsed_iterations if elapsed_iterations > 0 else 1)
-    logger.info(
-        f"{elapsed_iterations} total iterations, final loss {loss} likelihood {last_iter_likelihood}"
-    )
-    logger.info(
-        f"\tInitialization took {init_e} loop took {loop_e} overall ({per_loop_e}/ea)"
-    )
-
-    return (model_means_L, model_variance_sigma_squared)
 
 
 def get_posterior_means_Z(
@@ -178,7 +53,7 @@ def get_posterior_means_Z(
     return posterior_matrix
 
 
-def estimate_new_model_variance(
+def estimate_new_model_global_variance(
     posterior_means_Z: FloatArrayType,
     prior_means_L: FloatArrayType,
     posterior_var_dZ: FloatArrayType,

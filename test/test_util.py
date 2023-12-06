@@ -5,7 +5,7 @@ from pytest import approx, raises
 from typing import cast
 
 from lzcompression.types import InitializationStrategy, SVDStrategy, LossType
-from lzcompression.util import (
+from lzcompression.util.util import (
     initialize_low_rank_candidate,
     _squared_difference_loss,
     _frobenius_norm_loss,
@@ -112,8 +112,8 @@ def test_frobenius_norm_loss() -> None:
     assert approx(res2) == 8.0
 
 
-@patch("lzcompression.util._squared_difference_loss")
-@patch("lzcompression.util._frobenius_norm_loss")
+@patch("lzcompression.util.util._squared_difference_loss")
+@patch("lzcompression.util.util._frobenius_norm_loss")
 def test_compute_loss_dispatches_correctly(mock_frob: Mock, mock_sqdiff: Mock) -> None:
     mock_frob_return = 5
     mock_sqdiff_return = 10
@@ -233,9 +233,9 @@ def test_find_low_rank_t_recovers_full_rank_input_when_allowed_full_rank() -> No
     pass
 
 
-@patch("lzcompression.util._find_low_rank_random_truncated")
-@patch("lzcompression.util._find_low_rank_exact_truncated")
-@patch("lzcompression.util._find_low_rank_full")
+@patch("lzcompression.util.util._find_low_rank_random_truncated")
+@patch("lzcompression.util.util._find_low_rank_exact_truncated")
+@patch("lzcompression.util.util._find_low_rank_full")
 def test_find_low_rank_dispatches_appropriately(
     mock_full: Mock, mock_lr_exact: Mock, mock_lr_rand: Mock
 ) -> None:
