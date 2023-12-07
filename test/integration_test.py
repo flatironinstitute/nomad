@@ -74,6 +74,21 @@ def test_single_variance_gauss_kernel_random_matrix_recovery() -> None:
     assert sparse_loss < random_matrix_tolerance
 
 
+def test_rowwise_variance_gauss_kernel_random_matrix_recovery() -> None:
+    result = decompose(
+        random_matrix_sparse,
+        random_matrix_target_rank,
+        KernelStrategy.GAUSSIAN_MODEL_ROWWISE_VARIANCE,
+        tolerance=random_matrix_tolerance,
+    )
+    low_rank = result[0]
+    low_rank_relu = np.copy(low_rank)
+    low_rank_relu[low_rank_relu < 0] = 0
+    sparse_loss = compute_loss(low_rank_relu, random_matrix_sparse)
+    assert sparse_loss < random_matrix_tolerance
+
+
+
 ## TODO: Add appropriate tolerance and do an elevens-recovery test for naive method
 
 
@@ -86,3 +101,15 @@ def test_single_variance_gauss_kernel_elevens_matrix_recovery() -> None:
     relu_l = np.copy(result[0])
     relu_l[relu_l < 0] = 0
     assert np.allclose(relu_l, eleven_matrix)
+
+
+def test_rowwise_variance_gauss_kernel_elevens_matrix_recovery() -> None:
+    result = decompose(
+        eleven_matrix,
+        eleven_matrix_target_rank,
+        KernelStrategy.GAUSSIAN_MODEL_ROWWISE_VARIANCE,
+    )
+    relu_l = np.copy(result[0])
+    relu_l[relu_l < 0] = 0
+    assert np.allclose(relu_l, eleven_matrix)
+

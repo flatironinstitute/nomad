@@ -60,9 +60,7 @@ def test_single_variance_gauss_model_final_report() -> None:
 @patch(
     "lzcompression.kernels.single_variance_gauss_model.get_stddev_normalized_matrix_gamma"
 )
-@patch(
-    "lzcompression.kernels.single_variance_gauss_model.estimate_new_model_global_variance"
-)
+@patch("lzcompression.kernels.single_variance_gauss_model.estimate_new_model_variance")
 @patch("lzcompression.kernels.single_variance_gauss_model.find_low_rank")
 @patch(
     "lzcompression.kernels.single_variance_gauss_model.get_elementwise_posterior_variance_dZbar"

@@ -4,6 +4,7 @@ import time
 import logging
 from lzcompression.kernels.kernel_base import KernelBase
 from lzcompression.kernels.base_model_free import BaseModelFree
+from lzcompression.kernels.rowwise_variance_gauss_model import RowwiseVarianceGaussianModelKernel
 from lzcompression.kernels.single_variance_gauss_model import (
     SingleVarianceGaussianModelKernel,
 )
@@ -28,6 +29,8 @@ def instantiate_kernel(s: KernelStrategy, data_in: KernelInputType) -> KernelBas
         return BaseModelFree(data_in)
     if s == KernelStrategy.GAUSSIAN_MODEL_SINGLE_VARIANCE:
         return SingleVarianceGaussianModelKernel(data_in)
+    if s == KernelStrategy.GAUSSIAN_MODEL_ROWWISE_VARIANCE:
+        return RowwiseVarianceGaussianModelKernel(data_in)
     raise ValueError(f"Unsupported kernel strategy {s}")
 
 

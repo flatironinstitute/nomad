@@ -80,6 +80,10 @@ def test_pdf_to_cdf_ratio_psi() -> None:
     np.testing.assert_allclose(res2, expected)
 
 
+def test_normal_log_pdf() -> None:
+    pass
+
+
 #### Losses
 
 

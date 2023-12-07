@@ -1,3 +1,4 @@
+from typing import cast
 import numpy as np
 import logging
 from lzcompression.kernels.kernel_base import KernelBase
@@ -16,7 +17,7 @@ from lzcompression.util.gauss_model_util import (
     get_stddev_normalized_matrix_gamma,
     get_posterior_means_Z,
     get_elementwise_posterior_variance_dZbar,
-    estimate_new_model_global_variance,
+    estimate_new_model_variance,
     target_matrix_log_likelihood,
 )
 
@@ -74,8 +75,11 @@ class SingleVarianceGaussianModelKernel(KernelBase):
         self.model_means_L = find_low_rank(
             posterior_means_Z, self.target_rank, self.model_means_L, self.svd_strategy
         )
-        self.model_variance_sigma_squared = estimate_new_model_global_variance(
-            posterior_means_Z, self.model_means_L, posterior_var_dZ
+        self.model_variance_sigma_squared = cast(
+            float,
+            estimate_new_model_variance(
+                posterior_means_Z, self.model_means_L, posterior_var_dZ
+            ),
         )
         self.gamma = get_stddev_normalized_matrix_gamma(
             self.model_means_L, self.model_variance_sigma_squared
