@@ -46,10 +46,17 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
     def __init__(self, input: KernelInputType) -> None:
         super().__init__(input)
         initial_variance: FloatArrayType = np.var(input.sparse_matrix_X, axis=1)
-        print(f"initial variance before anything: {initial_variance}")
         initial_gamma = get_stddev_normalized_matrix_gamma(
             input.low_rank_candidate_L, initial_variance
         )
+        # print(f"initial variance before anything: {initial_variance}") # TODO: DELETE ME
+        # initial_likelihood = target_matrix_log_likelihood(
+        #     self.sparse_matrix_X,
+        #     input.low_rank_candidate_L,
+        #     initial_gamma,
+        #     initial_variance,
+        # )
+        # print(f"Initial log-likelihood: {initial_likelihood}") # TODO: DELETE ME
 
         # We use a more semantic name for this use case
         self.model_means_L: FloatArrayType = input.low_rank_candidate_L
@@ -69,7 +76,6 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
         posterior_var_dZ = get_elementwise_posterior_variance_dZbar(
             self.sparse_matrix_X, self.model_variance_sigma_squared, self.gamma
         )
-
         return (posterior_means_Z, posterior_var_dZ)
 
 
@@ -80,7 +86,7 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
         likelihood = target_matrix_log_likelihood(
             self.sparse_matrix_X,
             self.model_means_L,
-            self.gamma,
+            gamma, # Remember, we haven't updated self.gamma yet
             self.model_variance_sigma_squared,
         )
         return (gamma, likelihood)
@@ -150,6 +156,9 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
             )
         self.likelihood = likelihood
 
+        # # # TODO: DELETE
+        # print(f"sigma-squareds:\n\t{self.model_variance_sigma_squared}")
+        # print(f"thetas:\n{self.model_means_L}")
         self.loss = compute_loss(
             posterior_means_Z, self.model_means_L, LossType.FROBENIUS
         )
