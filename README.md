@@ -40,7 +40,9 @@ We'll publish to `pypi` once we're out of alpha and have picked a good name.
 Load the observed non-negative matrix `X` as a numpy array:
 
 ```python
-from lzcompression.gauss_model import estimate_gaussian_model
+from lzcompression.decompose import decompose
+from lzcompression.types import KernelStrategy
+import numpy as np
 import logging
 
 # "info"-level log messages in the library won't be displayed unless the
@@ -55,9 +57,10 @@ nonnegative_matrix_X = np.array([...]) # or load from file, etc.
 
 target_rank = 5         # as per your domain expertise
 
-(model_means_L, model_variance) = estimate_gaussian_model(
+(model_means_L, model_variance) = decompose(
     nonnegative_matrix_X,
     target_rank,
+    kernel_strategy=KernelStrategy.GAUSSIAN_MODEL_SINGLE_VARIANCE,
     verbose=True
 )
 
@@ -76,8 +79,20 @@ print(relu_L)
 
 ### Additional Features
 
-The main entry point for the model-based low-rank matrix estimation is `lzcompression.gauss_model.estimate_gaussian_model`.
-In addition to the two required parameters (the sparse nonnegative matrix and the target rank), the following options are exposed:
+The main entry point for the model-based low-rank matrix estimation is `lzcompression.decompose.decompose`.
+Three parameters are required:
+- the sparse nonnegative matrix
+- the target rank
+- the "kernel strategy," which specifies which of the family of algorithms to use. Currently supported
+  kernel strategies are:
+  - `KernelStrategy.BASE_MODEL_FREE` -- a naive approach that just iteratively applies SVD, with no
+    underlying statistical model
+  - `KernelStrategy.GAUSSIAN_MODEL_SINGLE_VARIANCE` -- a Gaussian model as described in Saul (2022)
+  - `KernelStrategy.GAUSSIAN_MODEL_ROWWISE_VARIANCE` -- a Gaussian model similar to that described in
+    Saul (2022), but which computes a different variance value for each row instead of using a single
+    global/mean variance
+
+Additionally, the following options are exposed:
 
 - `svd_strategy`: Strategy to use for SVD step during iteration. Supported options:
   - `SVDStrategy.FULL`: Full, deterministic decomposition.
@@ -87,6 +102,9 @@ In addition to the two required parameters (the sparse nonnegative matrix and th
   - `InitializationStrategy.BROADCAST_MEAN`: the default for the model-based algorithm; creates a first-guess low-rank matrix
   where each element is the mean of the elements of `X`.
   - `InitializationStrategy.COPY`: Uses a copy of `X` as the first guess for the low-rank matrix.
+  - `InitializationStrategy.KNOWN_MATRIX`: When used along with a value for the `initial_guess_matrix` parameter,
+  allows the caller to use any appropriately-sized matrix for the current low-rank estimate. (This is to facilitate
+  checkpointing and warm starts.)
 - `tolerance`: If set, the algorithm will stop early once the loss (defined as the Frobenius norm of the
 difference between `X` and the current estimate) is below this value.
 - `manual_max_iterations`: If set, the algorithm will use this number as the maximum number of iterations

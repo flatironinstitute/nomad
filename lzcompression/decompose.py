@@ -54,6 +54,10 @@ def initialize_candidate(
         )
         else sparse
     )
+    if (guess is not None and _initialization_strategy == InitializationStrategy.KNOWN_MATRIX):
+        if (guess.shape != sparse.shape):
+            raise ValueError(f"A manual checkpoint matrix was submitted, but its shape" +
+                             f"{guess.shape} does not match the sparse matrix's {sparse.shape}.")
     return initialize_low_rank_candidate(input_matrix, _initialization_strategy)
 
 

@@ -128,6 +128,16 @@ def test_initialize_candidate_defaults_to_copy_on_null_checkpoint(
     mock_init.assert_called_once_with(mock_x, InitializationStrategy.KNOWN_MATRIX)
 
 
+def test_initialize_candidate_throws_on_checkpoint_size_mismatch() -> None:
+    mock_x = np.eye(3)
+    mock_checkpoint = np.eye(4)
+    k_strat = KernelStrategy.GAUSSIAN_MODEL_ROWWISE_VARIANCE
+    with raises(ValueError, match="shape"):
+        _ = initialize_candidate(
+            InitializationStrategy.KNOWN_MATRIX, k_strat, mock_x, mock_checkpoint
+        )
+
+
 ## Computing max iterations
 def test_compute_max_iterations_honors_manual_count() -> None:
     manual_max = 17
