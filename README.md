@@ -101,7 +101,10 @@ Additionally, the following options are exposed:
 - `initialization`: Initialization strategy for the first guess at the low-rank matrix.
   - `InitializationStrategy.BROADCAST_MEAN`: the default for the model-based algorithm; creates a first-guess low-rank matrix
   where each element is the mean of the elements of `X`.
-  - `InitializationStrategy.COPY`: Uses a copy of `X` as the first guess for the low-rank matrix.
+  - `InitializationStrategy.ROWWISE_MEAN`: creates a first-guess low-rank matrix where each element is the mean of the
+  elements of `X` from the corresponding row. This is intuitively appealing for the per-row-variance Gaussian model algorithm.
+  - `InitializationStrategy.COPY`: Uses a copy of `X` as the first guess for the low-rank matrix. The naive EM algorithm is
+  currently restricted to this, though that may change in the future.
   - `InitializationStrategy.KNOWN_MATRIX`: When used along with a value for the `initial_guess_matrix` parameter,
   allows the caller to use any appropriately-sized matrix for the current low-rank estimate. (This is to facilitate
   checkpointing and warm starts.)
