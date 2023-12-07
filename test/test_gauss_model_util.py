@@ -229,9 +229,7 @@ def test_target_matrix_log_likelihood() -> None:
 
 def test_target_matrix_log_likelihood_rowwise_variance() -> None:
     sparse = np.eye(3)
-    centers = (
-        np.ones((3, 3)) * 2
-    )
+    centers = np.ones((3, 3)) * 2
     sigma_sq = np.array([1, 2, 3])
     # this will result in us taking logpdf(1, loc=2, scale=sqrt([1, 2, 3])) for
     # the 1s in the identity matrix. So those values contribute
@@ -244,4 +242,3 @@ def test_target_matrix_log_likelihood_rowwise_variance() -> None:
     expected = (-4.56936) + (6 * -1.841021645)
     result = target_matrix_log_likelihood(sparse, centers, stddev_norm_lr, sigma_sq)
     assert approx(result) == expected
-

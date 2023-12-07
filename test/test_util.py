@@ -68,7 +68,7 @@ def test_initialize_returns_rowwise_mean() -> None:
         base_matrix, InitializationStrategy.ROWWISE_MEAN
     )
     np.testing.assert_allclose(res, expected)
-    
+
 
 def test_initialize_throws_on_unknown_strategy() -> None:
     base_matrix = np.ones((2, 2))

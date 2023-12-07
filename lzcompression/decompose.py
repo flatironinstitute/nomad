@@ -4,7 +4,9 @@ import time
 import logging
 from lzcompression.kernels.kernel_base import KernelBase
 from lzcompression.kernels.base_model_free import BaseModelFree
-from lzcompression.kernels.rowwise_variance_gauss_model import RowwiseVarianceGaussianModelKernel
+from lzcompression.kernels.rowwise_variance_gauss_model import (
+    RowwiseVarianceGaussianModelKernel,
+)
 from lzcompression.kernels.single_variance_gauss_model import (
     SingleVarianceGaussianModelKernel,
 )
@@ -54,10 +56,15 @@ def initialize_candidate(
         )
         else sparse
     )
-    if (guess is not None and _initialization_strategy == InitializationStrategy.KNOWN_MATRIX):
-        if (guess.shape != sparse.shape):
-            raise ValueError(f"A manual checkpoint matrix was submitted, but its shape" +
-                             f"{guess.shape} does not match the sparse matrix's {sparse.shape}.")
+    if (
+        guess is not None
+        and _initialization_strategy == InitializationStrategy.KNOWN_MATRIX
+    ):
+        if guess.shape != sparse.shape:
+            raise ValueError(
+                f"A manual checkpoint matrix was submitted, but its shape"
+                + f"{guess.shape} does not match the sparse matrix's {sparse.shape}."
+            )
     return initialize_low_rank_candidate(input_matrix, _initialization_strategy)
 
 

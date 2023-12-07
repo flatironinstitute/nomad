@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 # This is going to be very memory-intensive though, unfortunately...
 # Need to think about this.
 
+
 class RowwiseVarianceGaussianModelKernel(KernelBase):
     """Estimator for a Gaussian mdel (L, v) for a sparse nonnegative matrix X with shared variance per row,
 
@@ -49,14 +50,6 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
         initial_gamma = get_stddev_normalized_matrix_gamma(
             input.low_rank_candidate_L, initial_variance
         )
-        # print(f"initial variance before anything: {initial_variance}") # TODO: DELETE ME
-        # initial_likelihood = target_matrix_log_likelihood(
-        #     self.sparse_matrix_X,
-        #     input.low_rank_candidate_L,
-        #     initial_gamma,
-        #     initial_variance,
-        # )
-        # print(f"Initial log-likelihood: {initial_likelihood}") # TODO: DELETE ME
 
         # We use a more semantic name for this use case
         self.model_means_L: FloatArrayType = input.low_rank_candidate_L
@@ -64,7 +57,6 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
         self.gamma: FloatArrayType = initial_gamma
         self.likelihood: float = float("-inf")
         self.half_step_likelihood: float = float("-inf")
-
 
     def do_pre_update(self) -> Tuple[FloatArrayType, FloatArrayType]:
         posterior_means_Z = get_posterior_means_Z(
@@ -78,30 +70,32 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
         )
         return (posterior_means_Z, posterior_var_dZ)
 
-
-    def do_post_update(self) -> Tuple[FloatArrayType, float]:
+    def do_post_update(self) -> float:
         gamma = get_stddev_normalized_matrix_gamma(
             self.model_means_L, self.model_variance_sigma_squared
         )
+        self.gamma = gamma
         likelihood = target_matrix_log_likelihood(
             self.sparse_matrix_X,
             self.model_means_L,
-            gamma, # Remember, we haven't updated self.gamma yet
+            self.gamma,
             self.model_variance_sigma_squared,
         )
-        return (gamma, likelihood)
-    
+        return likelihood
 
     def do_means_update(self, posterior_means_Z: FloatArrayType) -> FloatArrayType:
         # Unlike in the global-variance version, with rowwise variance we want to use SVD
         # to find the best fit for the rowwise-stddev-scaled means. Then we scale the
         # result back by multiplying by the rowwise standard deviation.
-        normalized_means = get_stddev_normalized_matrix_gamma(posterior_means_Z, self.model_variance_sigma_squared)
+        normalized_means = get_stddev_normalized_matrix_gamma(
+            posterior_means_Z, self.model_variance_sigma_squared
+        )
         unscaled_new_means = find_low_rank(
             normalized_means, self.target_rank, self.model_means_L, self.svd_strategy
         )
-        return scale_by_rowwise_stddev(unscaled_new_means, self.model_variance_sigma_squared)
-
+        return scale_by_rowwise_stddev(
+            unscaled_new_means, self.model_variance_sigma_squared
+        )
 
     def step(self) -> None:
         """Each step combines two half-steps: first updating the model variance, then updating the model
@@ -130,18 +124,15 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
             ),
         )
         # update gamma and record likelihood after this update
-        (gamma, likelihood) = self.do_post_update()
-        self.gamma = gamma
-        self.half_step_likelihood = likelihood
+        self.half_step_likelihood = self.do_post_update()
 
         # Re-evaluate posterior
         (posterior_means_Z, posterior_var_dZ) = self.do_pre_update()
-        
+
         ## Part B: Update means
         self.model_means_L = self.do_means_update(posterior_means_Z)
         # Repeat gamma update and record new likelihood
-        (gamma, likelihood) = self.do_post_update()
-        self.gamma = gamma
+        likelihood = self.do_post_update()
 
         ### Monitor likelihood:
         # TODO: don't hard-code this warning here
@@ -151,22 +142,19 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
             )
         if likelihood < self.half_step_likelihood:
             logger.warning(
-                f"Iteration {self.elapsed_iterations - 1}.5: Likelihood decreased between variance update and means " +
-                f"update\n\tfrom {self.half_step_likelihood} to {likelihood}."
+                f"Iteration {self.elapsed_iterations - 1}.5: Likelihood decreased between variance update and means "
+                + f"update\n\tfrom {self.half_step_likelihood} to {likelihood}."
             )
         self.likelihood = likelihood
 
-        # # # TODO: DELETE
-        # print(f"sigma-squareds:\n\t{self.model_variance_sigma_squared}")
-        # print(f"thetas:\n{self.model_means_L}")
         self.loss = compute_loss(
             posterior_means_Z, self.model_means_L, LossType.FROBENIUS
         )
 
     def running_report(self) -> str:
         txt = (
-            f"\t\tIteration {self.elapsed_iterations}: " +
-            f"{self.loss=} Likelihoods {self.half_step_likelihood} -> {self.likelihood}"
+            f"\t\tIteration {self.elapsed_iterations}: "
+            + f"{self.loss=} Likelihoods {self.half_step_likelihood} -> {self.likelihood}"
         )
         return txt
 

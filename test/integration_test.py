@@ -88,7 +88,6 @@ def test_rowwise_variance_gauss_kernel_random_matrix_recovery() -> None:
     assert sparse_loss < random_matrix_tolerance
 
 
-
 ## TODO: Add appropriate tolerance and do an elevens-recovery test for naive method
 
 
@@ -112,4 +111,3 @@ def test_rowwise_variance_gauss_kernel_elevens_matrix_recovery() -> None:
     relu_l = np.copy(result[0])
     relu_l[relu_l < 0] = 0
     assert np.allclose(relu_l, eleven_matrix)
-

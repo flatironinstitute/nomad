@@ -7,6 +7,7 @@ from lzcompression.kernels.rowwise_variance_gauss_model import (
 )
 from lzcompression.types import KernelInputType, SVDStrategy
 
+
 def make_default_kernel_initialization() -> KernelInputType:
     default_sparse = np.eye(3) * 3
     default_candidate = np.ones(default_sparse.shape)
@@ -20,6 +21,7 @@ def make_default_kernel_initialization() -> KernelInputType:
         default_svd_strategy,
         default_tolerance,
     )
+
 
 def test_rowwise_variance_gauss_model_inits_correctly() -> None:
     indata = make_default_kernel_initialization()
@@ -48,10 +50,14 @@ def test_rowwise_variance_gauss_model_final_report() -> None:
     assert "final loss" in result.summary
     assert "likelihood" in result.summary
     np.testing.assert_array_equal(result.data[0], indata.low_rank_candidate_L)
-    np.testing.assert_array_equal(result.data[1], np.var(indata.sparse_matrix_X, axis=1))
+    np.testing.assert_array_equal(
+        result.data[1], np.var(indata.sparse_matrix_X, axis=1)
+    )
 
 
-def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_full_iteration(caplog: LogCaptureFixture) -> None:
+def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_full_iteration(
+    caplog: LogCaptureFixture,
+) -> None:
     indata = make_default_kernel_initialization()
     kernel = RowwiseVarianceGaussianModelKernel(indata)
     kernel.likelihood = float("inf")
@@ -59,8 +65,12 @@ def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_full_iterati
     assert "Likelihood decreased," in caplog.text
 
 
-@patch("lzcompression.kernels.rowwise_variance_gauss_model.target_matrix_log_likelihood")
-def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_half_iteration(mock_likelihood: Mock, caplog: LogCaptureFixture) -> None:
+@patch(
+    "lzcompression.kernels.rowwise_variance_gauss_model.target_matrix_log_likelihood"
+)
+def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_half_iteration(
+    mock_likelihood: Mock, caplog: LogCaptureFixture
+) -> None:
     mock_likelihood.side_effect = [10, -10]
     indata = make_default_kernel_initialization()
     kernel = RowwiseVarianceGaussianModelKernel(indata)
@@ -72,8 +82,12 @@ def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_half_iterati
 # the means-matrix update process, as there was a bug in development where we left that out
 @patch("lzcompression.kernels.rowwise_variance_gauss_model.scale_by_rowwise_stddev")
 @patch("lzcompression.kernels.rowwise_variance_gauss_model.find_low_rank")
-@patch("lzcompression.kernels.rowwise_variance_gauss_model.get_stddev_normalized_matrix_gamma")
-def test_rowwise_variance_means_update(mock_gamma: Mock, mock_lowrank: Mock, mock_scale: Mock) -> None:
+@patch(
+    "lzcompression.kernels.rowwise_variance_gauss_model.get_stddev_normalized_matrix_gamma"
+)
+def test_rowwise_variance_means_update(
+    mock_gamma: Mock, mock_lowrank: Mock, mock_scale: Mock
+) -> None:
     mock_gamma.return_value = np.eye(3)
     mock_lowrank.return_value = np.eye(3) * 2
     mock_scale.return_value = np.eye(3) * 3
@@ -86,8 +100,15 @@ def test_rowwise_variance_means_update(mock_gamma: Mock, mock_lowrank: Mock, moc
     kernel.do_means_update(post_means)
 
     mock_gamma.assert_called_once_with(post_means, kernel.model_variance_sigma_squared)
-    mock_lowrank.assert_called_once_with(mock_gamma.return_value, kernel.target_rank, kernel.model_means_L, kernel.svd_strategy)
-    mock_scale.assert_called_once_with(mock_lowrank.return_value, kernel.model_variance_sigma_squared)
+    mock_lowrank.assert_called_once_with(
+        mock_gamma.return_value,
+        kernel.target_rank,
+        kernel.model_means_L,
+        kernel.svd_strategy,
+    )
+    mock_scale.assert_called_once_with(
+        mock_lowrank.return_value, kernel.model_variance_sigma_squared
+    )
 
 
 # Again, this is mostly a sanity check that we didn't somehow skip something.
@@ -95,7 +116,9 @@ def test_rowwise_variance_means_update(mock_gamma: Mock, mock_lowrank: Mock, moc
 @patch("lzcompression.kernels.rowwise_variance_gauss_model.compute_loss")
 @patch("lzcompression.kernels.rowwise_variance_gauss_model.scale_by_rowwise_stddev")
 @patch("lzcompression.kernels.rowwise_variance_gauss_model.find_low_rank")
-@patch("lzcompression.kernels.rowwise_variance_gauss_model.target_matrix_log_likelihood")
+@patch(
+    "lzcompression.kernels.rowwise_variance_gauss_model.target_matrix_log_likelihood"
+)
 @patch(
     "lzcompression.kernels.rowwise_variance_gauss_model.get_stddev_normalized_matrix_gamma"
 )
@@ -114,7 +137,7 @@ def test_rowwise_variance_step_calls(
     mock_scale: Mock,
     mock_loss: Mock,
 ) -> None:
-    mock_likelihood.return_value = 5.
+    mock_likelihood.return_value = 5.0
     indata = make_default_kernel_initialization()
     kernel = RowwiseVarianceGaussianModelKernel(indata)
     mock_getgamma.reset_mock()

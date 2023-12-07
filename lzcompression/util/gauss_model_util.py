@@ -23,7 +23,7 @@ def broadcast_rowwise_variance(
     bcast = np.repeat(var, shape[1]).reshape(shape)
     if filter is None:
         return bcast
-    return bcast[filter]
+    return cast(FloatArrayType, bcast[filter])
 
 
 def get_posterior_means_Z(
@@ -60,7 +60,7 @@ def get_posterior_means_Z(
     #### Z-bar_ij = S_ij if S_ij > 0
     #### Z-bar_ij = L_ij - sigma * psi(gamma) if S = 0.
     posterior_matrix = np.copy(sparse_matrix)
-    sigma = np.sqrt(variance_sigma_sq)
+    sigma: Union[float, FloatArrayType] = np.sqrt(variance_sigma_sq)
     filter = sparse_matrix == 0
     sigma = broadcast_rowwise_variance(sigma, sparse_matrix, filter=filter)
     # fmt: off
@@ -106,7 +106,7 @@ def estimate_new_model_variance(
         An updated estimate of the overall variance in the Gaussian model.
     """
     axis = None if not rowwise else 1
-    sigma_sq = np.mean(
+    sigma_sq: Union[float, FloatArrayType] = np.mean(
         np.square(posterior_means_Z - prior_means_L) + posterior_var_dZ, axis=axis
     )
     return sigma_sq
@@ -131,7 +131,9 @@ def get_stddev_normalized_matrix_gamma(
     return cast(FloatArrayType, unnormalized_matrix / stddev)
 
 
-def scale_by_rowwise_stddev(to_scale: FloatArrayType, variance_sigma_sq: FloatArrayType) -> FloatArrayType:
+def scale_by_rowwise_stddev(
+    to_scale: FloatArrayType, variance_sigma_sq: FloatArrayType
+) -> FloatArrayType:
     """Scale up a matrix by the rowwise variance values.
 
     This is needed for the rowwise-variance model means update step, to undo the standard-deviation
@@ -246,7 +248,7 @@ def target_matrix_log_likelihood(
     """
     zero_indices = sparse_matrix == 0
     nonzero_indices = np.invert(zero_indices)
-    scale = np.sqrt(variance_sigma_sq)
+    scale: Union[float, FloatArrayType] = np.sqrt(variance_sigma_sq)
     scale = broadcast_rowwise_variance(scale, sparse_matrix, filter=nonzero_indices)
     # The following at least avoids *explicitly* creating & populating an empty matrix
     # just to sum over it
