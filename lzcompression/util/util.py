@@ -36,6 +36,10 @@ def initialize_low_rank_candidate(
         low_rank_candidate = np.copy(input_matrix)
     elif method == InitializationStrategy.BROADCAST_MEAN:
         low_rank_candidate = np.full(input_matrix.shape, np.mean(input_matrix))
+    elif method == InitializationStrategy.ROWWISE_MEAN:
+        shape = input_matrix.shape
+        row_means = np.mean(input_matrix, axis=1)
+        low_rank_candidate = np.repeat(row_means, shape[1]).reshape(shape)
     elif method == InitializationStrategy.KNOWN_MATRIX:
         low_rank_candidate = np.copy(input_matrix)
     else:

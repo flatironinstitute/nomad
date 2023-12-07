@@ -46,6 +46,7 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
     def __init__(self, input: KernelInputType) -> None:
         super().__init__(input)
         initial_variance: FloatArrayType = np.var(input.sparse_matrix_X, axis=1)
+        print(f"initial variance before anything: {initial_variance}")
         initial_gamma = get_stddev_normalized_matrix_gamma(
             input.low_rank_candidate_L, initial_variance
         )
@@ -140,11 +141,11 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
         # TODO: don't hard-code this warning here
         if likelihood < self.likelihood:
             logger.warning(
-                f"Iteration ${self.elapsed_iterations}: Likelihood decreased, from {self.likelihood} to {likelihood}"
+                f"Iteration {self.elapsed_iterations}: Likelihood decreased, from {self.likelihood} to {likelihood}"
             )
         if likelihood < self.half_step_likelihood:
             logger.warning(
-                f"Iteration ${self.elapsed_iterations - 1}.5: Likelihood decreased between variance update and means " +
+                f"Iteration {self.elapsed_iterations - 1}.5: Likelihood decreased between variance update and means " +
                 f"update\n\tfrom {self.half_step_likelihood} to {likelihood}."
             )
         self.likelihood = likelihood

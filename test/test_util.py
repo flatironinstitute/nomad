@@ -56,6 +56,20 @@ def test_initialize_returns_mean() -> None:
     np.testing.assert_allclose(res, expected)
 
 
+def test_initialize_returns_rowwise_mean() -> None:
+    # fmt: off
+    base_matrix = np.array([
+        [ 1, 2, 0],
+        [ 4, 0, 5]
+    ])
+    # fmt: on
+    expected = np.array([[1, 1, 1], [3, 3, 3]])
+    res = initialize_low_rank_candidate(
+        base_matrix, InitializationStrategy.ROWWISE_MEAN
+    )
+    np.testing.assert_allclose(res, expected)
+    
+
 def test_initialize_throws_on_unknown_strategy() -> None:
     base_matrix = np.ones((2, 2))
     with raises(ValueError, match="Unsupported"):

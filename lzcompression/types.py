@@ -15,7 +15,8 @@ class KernelStrategy(Enum):
 class InitializationStrategy(Enum):
     COPY = 1
     BROADCAST_MEAN = 2
-    KNOWN_MATRIX = 3
+    ROWWISE_MEAN = 3
+    KNOWN_MATRIX = 4
 
 
 class SVDStrategy(Enum):
