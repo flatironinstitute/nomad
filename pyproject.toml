@@ -41,7 +41,7 @@ test = [
 source = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "--cov --cov-report lcov"
+addopts = "--cov --cov-report lcov -rs"
 
 [tool.mypy]
 python_version = "3.8"
@@ -61,3 +61,6 @@ disallow_untyped_decorators = true
 warn_redundant_casts = true
 no_implicit_reexport = true
 strict_equality = true
+exclude = [
+    'conftest.py'
+]

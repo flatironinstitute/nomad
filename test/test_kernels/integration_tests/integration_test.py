@@ -1,8 +1,8 @@
 from typing import cast
 import numpy as np
+import pytest
 from lzcompression.decompose import decompose
-
-from lzcompression.types import FloatArrayType, KernelStrategy
+from lzcompression.types import KernelStrategy
 from lzcompression.util.util import compute_loss
 
 # fmt: off
@@ -25,9 +25,6 @@ eleven_matrix = np.array(
 eleven_matrix_target_rank = 6
 # fmt: on
 
-# TODO: These tests are slow, use more sophisticated pytest config to not always run them
-
-
 # TODO: make this a proper test fixture
 random_matrix_tolerance = 0.01
 random_matrix_target_rank = 10
@@ -46,6 +43,7 @@ random_matrix_sparse = np.copy(random_base_matrix)
 random_matrix_sparse[random_matrix_sparse < 0] = 0
 
 
+@pytest.mark.integration
 def test_base_model_free_kernel_random_matrix_recovery() -> None:
     result = decompose(
         random_matrix_sparse,
@@ -60,6 +58,7 @@ def test_base_model_free_kernel_random_matrix_recovery() -> None:
     assert sparse_loss < random_matrix_tolerance
 
 
+@pytest.mark.integration
 def test_single_variance_gauss_kernel_random_matrix_recovery() -> None:
     result = decompose(
         random_matrix_sparse,
@@ -74,6 +73,7 @@ def test_single_variance_gauss_kernel_random_matrix_recovery() -> None:
     assert sparse_loss < random_matrix_tolerance
 
 
+@pytest.mark.integration
 def test_rowwise_variance_gauss_kernel_random_matrix_recovery() -> None:
     result = decompose(
         random_matrix_sparse,
@@ -91,6 +91,7 @@ def test_rowwise_variance_gauss_kernel_random_matrix_recovery() -> None:
 ## TODO: Add appropriate tolerance and do an elevens-recovery test for naive method
 
 
+@pytest.mark.integration
 def test_single_variance_gauss_kernel_elevens_matrix_recovery() -> None:
     result = decompose(
         eleven_matrix,
@@ -102,6 +103,7 @@ def test_single_variance_gauss_kernel_elevens_matrix_recovery() -> None:
     assert np.allclose(relu_l, eleven_matrix)
 
 
+@pytest.mark.integration
 def test_rowwise_variance_gauss_kernel_elevens_matrix_recovery() -> None:
     result = decompose(
         eleven_matrix,
