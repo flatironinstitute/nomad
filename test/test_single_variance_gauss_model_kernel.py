@@ -1,3 +1,4 @@
+from typing import cast
 import numpy as np
 from unittest.mock import Mock, patch
 from pytest import LogCaptureFixture
@@ -5,7 +6,11 @@ from pytest import LogCaptureFixture
 from lzcompression.kernels.single_variance_gauss_model import (
     SingleVarianceGaussianModelKernel,
 )
-from lzcompression.types import KernelInputType, SVDStrategy
+from lzcompression.types import (
+    KernelInputType,
+    SVDStrategy,
+    SingleVarianceGaussianModelKernelReturnType,
+)
 
 
 def make_default_kernel_initialization() -> KernelInputType:
@@ -50,8 +55,11 @@ def test_single_variance_gauss_model_final_report() -> None:
     assert "0 total iterations" in result.summary
     assert "final loss" in result.summary
     assert "likelihood" in result.summary
-    np.testing.assert_array_equal(result.data[0], indata.low_rank_candidate_L)
-    assert result.data[1] == float(np.var(indata.sparse_matrix_X))
+    result_data = cast(SingleVarianceGaussianModelKernelReturnType, result.data)
+    np.testing.assert_array_equal(
+        result_data.reconstruction, indata.low_rank_candidate_L
+    )
+    assert result_data.variance == float(np.var(indata.sparse_matrix_X))
 
 
 # TODO: These are not very interesting assertions

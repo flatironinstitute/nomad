@@ -12,6 +12,7 @@ from lzcompression.decompose import (
 )
 
 from lzcompression.types import (
+    BaseModelFreeKernelReturnType,
     FloatArrayType,
     InitializationStrategy,
     KernelInputType,
@@ -38,7 +39,9 @@ class TestKernel(KernelBase):
         return f"{self.elapsed_iterations}"
 
     def report(self) -> KernelReturnType:
-        return KernelReturnType("Complete", self.sparse_matrix_X)
+        return KernelReturnType(
+            "Complete", BaseModelFreeKernelReturnType(self.sparse_matrix_X)
+        )
 
 
 ## Kernel Instantiation
@@ -202,7 +205,9 @@ def test_decompose_obeys_max_iterations(mock_get_kernel: Mock) -> None:
     assert passed_input.tolerance is None
 
     assert mock_kernel.elapsed_iterations == max_iterations
-    np.testing.assert_array_equal(sparse_matrix, cast(FloatArrayType, result))
+    np.testing.assert_array_equal(
+        sparse_matrix, cast(FloatArrayType, result.reconstruction)
+    )
 
 
 @patch("lzcompression.decompose.instantiate_kernel")

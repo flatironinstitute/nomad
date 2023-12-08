@@ -4,12 +4,7 @@ import numpy.typing as npt
 from enum import Enum
 from dataclasses import dataclass
 
-
-class KernelStrategy(Enum):
-    TEST = 1
-    BASE_MODEL_FREE = 2
-    GAUSSIAN_MODEL_SINGLE_VARIANCE = 3
-    GAUSSIAN_MODEL_ROWWISE_VARIANCE = 4
+FloatArrayType = npt.NDArray[np.float_]
 
 
 class InitializationStrategy(Enum):
@@ -30,10 +25,36 @@ class LossType(Enum):
     SQUARED_DIFFERENCE = 2
 
 
-FloatArrayType = npt.NDArray[np.float_]
+class KernelStrategy(Enum):
+    TEST = 1
+    BASE_MODEL_FREE = 2
+    GAUSSIAN_MODEL_SINGLE_VARIANCE = 3
+    GAUSSIAN_MODEL_ROWWISE_VARIANCE = 4
+
+
+# This will facilitate a future conversion from returning the full
+# low-rank matrix to returning a factored version.
+SolutionType = FloatArrayType
+
+
+class BaseModelFreeKernelReturnType(NamedTuple):
+    reconstruction: SolutionType
+
+
+class SingleVarianceGaussianModelKernelReturnType(NamedTuple):
+    reconstruction: SolutionType
+    variance: float
+
+
+class RowwiseVarianceGaussianModelKernelReturnType(NamedTuple):
+    reconstruction: SolutionType
+    variance: FloatArrayType
+
 
 KernelReturnDataType = Union[
-    FloatArrayType, Tuple[FloatArrayType, float], Tuple[FloatArrayType, FloatArrayType]
+    BaseModelFreeKernelReturnType,
+    SingleVarianceGaussianModelKernelReturnType,
+    RowwiseVarianceGaussianModelKernelReturnType,
 ]
 
 
@@ -52,6 +73,7 @@ class KernelInputType:
     tolerance: Union[float, None]
 
 
+# Currently unused--may be more trouble than it's worth
 class DecomposeInput(NamedTuple):
     sparse_matrix_X: FloatArrayType
     target_rank: int

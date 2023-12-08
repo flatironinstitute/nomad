@@ -57,12 +57,14 @@ nonnegative_matrix_X = np.array([...]) # or load from file, etc.
 
 target_rank = 5         # as per your domain expertise
 
-(model_means_L, model_variance) = decompose(
+result_data = decompose(
     nonnegative_matrix_X,
     target_rank,
     kernel_strategy=KernelStrategy.GAUSSIAN_MODEL_SINGLE_VARIANCE,
     verbose=True
 )
+model_means_L = result_data.reconstruction
+model_variance = result_data.variance
 
 # use model_means_L as appropriate for your application
 

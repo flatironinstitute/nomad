@@ -87,7 +87,9 @@ def test_base_model_free_kernel_final_report() -> None:
 
     result_1 = kernel.report()
     assert "Not Tracked" in result_1.summary
-    np.testing.assert_array_equal(candidate, cast(FloatArrayType, result_1.data))
+    np.testing.assert_array_equal(
+        candidate, cast(FloatArrayType, result_1.data.reconstruction)
+    )
 
     kernel.loss = 3.0
     result_2 = kernel.report()

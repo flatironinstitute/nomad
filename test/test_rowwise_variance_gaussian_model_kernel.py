@@ -1,3 +1,4 @@
+from typing import cast
 import numpy as np
 from unittest.mock import Mock, patch
 from pytest import LogCaptureFixture
@@ -5,7 +6,11 @@ from pytest import LogCaptureFixture
 from lzcompression.kernels.rowwise_variance_gauss_model import (
     RowwiseVarianceGaussianModelKernel,
 )
-from lzcompression.types import KernelInputType, SVDStrategy
+from lzcompression.types import (
+    KernelInputType,
+    RowwiseVarianceGaussianModelKernelReturnType,
+    SVDStrategy,
+)
 
 
 def make_default_kernel_initialization() -> KernelInputType:
@@ -49,9 +54,12 @@ def test_rowwise_variance_gauss_model_final_report() -> None:
     assert "0 total iterations" in result.summary
     assert "final loss" in result.summary
     assert "likelihood" in result.summary
-    np.testing.assert_array_equal(result.data[0], indata.low_rank_candidate_L)
     np.testing.assert_array_equal(
-        result.data[1], np.var(indata.sparse_matrix_X, axis=1)
+        result.data.reconstruction, indata.low_rank_candidate_L
+    )
+    result_data = cast(RowwiseVarianceGaussianModelKernelReturnType, result.data)
+    np.testing.assert_array_equal(
+        result_data.variance, np.var(indata.sparse_matrix_X, axis=1)
     )
 
 

@@ -5,6 +5,7 @@ from lzcompression.kernels.kernel_base import KernelBase
 
 from lzcompression.types import (
     FloatArrayType,
+    RowwiseVarianceGaussianModelKernelReturnType,
     KernelInputType,
     KernelReturnType,
     LossType,
@@ -160,6 +161,8 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
 
     def report(self) -> KernelReturnType:
         text = f"{self.elapsed_iterations} total iterations, final loss {self.loss} likelihood {self.likelihood}"
-        return KernelReturnType(
-            text, (self.model_means_L, self.model_variance_sigma_squared)
+        data = RowwiseVarianceGaussianModelKernelReturnType(
+            self.model_means_L,
+            self.model_variance_sigma_squared,
         )
+        return KernelReturnType(text, data)

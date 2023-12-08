@@ -8,6 +8,7 @@ from lzcompression.types import (
     KernelInputType,
     KernelReturnType,
     LossType,
+    SingleVarianceGaussianModelKernelReturnType,
 )
 from lzcompression.util.util import (
     compute_loss,
@@ -111,6 +112,8 @@ class SingleVarianceGaussianModelKernel(KernelBase):
 
     def report(self) -> KernelReturnType:
         text = f"{self.elapsed_iterations} total iterations, final loss {self.loss} likelihood {self.likelihood}"
-        return KernelReturnType(
-            text, (self.model_means_L, self.model_variance_sigma_squared)
+        data = SingleVarianceGaussianModelKernelReturnType(
+            self.model_means_L,
+            self.model_variance_sigma_squared,
         )
+        return KernelReturnType(text, data)

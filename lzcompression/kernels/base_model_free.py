@@ -2,6 +2,7 @@ from lzcompression.kernels.kernel_base import KernelBase
 from lzcompression.util.base_model_free_util import construct_utility
 
 from lzcompression.types import (
+    BaseModelFreeKernelReturnType,
     KernelInputType,
     KernelReturnType,
     LossType,
@@ -62,7 +63,8 @@ class BaseModelFree(KernelBase):
 
     def report(self) -> KernelReturnType:
         text = f"{self.elapsed_iterations} total, final loss {self.loss if self.loss != float('inf') else 'Not Tracked'}"
-        return KernelReturnType(text, self.low_rank_candidate_L)
+        data = BaseModelFreeKernelReturnType(self.low_rank_candidate_L)
+        return KernelReturnType(text, data)
 
 
 # TODO:
