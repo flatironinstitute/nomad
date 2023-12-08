@@ -1,4 +1,3 @@
-from typing import cast
 import numpy as np
 import pytest
 from lzcompression.decompose import decompose
@@ -43,6 +42,7 @@ random_matrix_sparse = np.copy(random_base_matrix)
 random_matrix_sparse[random_matrix_sparse < 0] = 0
 
 
+# TODO: Make these a matrix with a runner instead of repeating the code
 @pytest.mark.integration
 def test_base_model_free_kernel_random_matrix_recovery() -> None:
     result = decompose(
@@ -88,7 +88,16 @@ def test_rowwise_variance_gauss_kernel_random_matrix_recovery() -> None:
     assert sparse_loss < random_matrix_tolerance
 
 
-## TODO: Add appropriate tolerance and do an elevens-recovery test for naive method
+@pytest.mark.integration
+def test_base_model_free_kernel_elevens_matrix_recovery() -> None:
+    result = decompose(
+        eleven_matrix,
+        eleven_matrix_target_rank,
+        KernelStrategy.BASE_MODEL_FREE,
+    )
+    relu_l = np.copy(result.reconstruction)
+    relu_l[relu_l < 0] = 0
+    assert np.allclose(relu_l, eleven_matrix, atol=0.001)
 
 
 @pytest.mark.integration
