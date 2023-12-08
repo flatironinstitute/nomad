@@ -9,7 +9,7 @@ packages = ["lzcompression"]
 [project]
 name = "lzcompression"
 version = "0.0.1"
-description = "Sparse nonnegative matrix decomposition package"
+description = "Nonlinear matrix decomposition package"
 authors = [
     { name = "Jeff Soules", email = "jsoules@flatironinstitute.org" }
 ]
