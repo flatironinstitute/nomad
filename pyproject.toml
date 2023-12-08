@@ -18,7 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
     "numpy>=1.24.0",
     "scipy>=1.11.1",
@@ -42,3 +42,22 @@ source = ["src"]
 
 [tool.pytest.ini_options]
 addopts = "--cov --cov-report lcov"
+
+[tool.mypy]
+python_version = "3.8"
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+show_error_codes = true
+warn_unused_ignores = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+warn_redundant_casts = true
+no_implicit_reexport = true
+strict_equality = true

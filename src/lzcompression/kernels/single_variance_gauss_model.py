@@ -105,9 +105,7 @@ class SingleVarianceGaussianModelKernel(KernelBase):
         )
 
     def running_report(self) -> str:
-        txt = (
-            f"\t\tIteration {self.elapsed_iterations}: {self.loss=} {self.likelihood=}"
-        )
+        txt = f"\t\tIteration {self.elapsed_iterations}: loss: {self.loss} likelihood: {self.likelihood}"
         return txt
 
     def report(self) -> KernelReturnType:

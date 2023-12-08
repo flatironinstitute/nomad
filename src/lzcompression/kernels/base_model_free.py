@@ -57,7 +57,7 @@ class BaseModelFree(KernelBase):
         txt = (
             ""
             if self.tolerance is None
-            else f"iteration: {self.elapsed_iterations} {self.loss=}"
+            else f"iteration: {self.elapsed_iterations} loss: {self.loss}"
         )
         return txt
 

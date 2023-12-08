@@ -95,7 +95,7 @@ def decompose(
 ) -> KernelReturnDataType:
     if verbose:
         logger.setLevel(logging.INFO)
-    logger.info(f"\tInitiating run, {target_rank=}, {tolerance=}")
+    logger.info(f"\tInitiating run, target_rank: {target_rank}, tolerance: {tolerance}")
 
     validate_sparse_matrix(sparse_matrix_X)
     max_iterations = compute_max_iterations(manual_max_iterations, target_rank)

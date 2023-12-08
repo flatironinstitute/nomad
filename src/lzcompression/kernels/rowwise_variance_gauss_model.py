@@ -155,7 +155,7 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
     def running_report(self) -> str:
         txt = (
             f"\t\tIteration {self.elapsed_iterations}: "
-            + f"{self.loss=} Likelihoods {self.half_step_likelihood} -> {self.likelihood}"
+            + f"loss: {self.loss} Likelihoods {self.half_step_likelihood} -> {self.likelihood}"
         )
         return txt
 

@@ -72,7 +72,7 @@ def test_base_model_free_kernel_running_report() -> None:
     kernel.tolerance = 5.0
     second_txt = kernel.running_report()
     assert "iteration" in second_txt
-    assert "loss=" in second_txt
+    assert "loss" in second_txt
 
 
 def test_base_model_free_kernel_final_report() -> None:
