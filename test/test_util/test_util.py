@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 from unittest.mock import Mock, patch
 from pytest import approx, raises
 from typing import Callable, Tuple, cast
