@@ -1,7 +1,7 @@
 from typing import cast
 import numpy as np
 from unittest.mock import Mock, patch
-from lzcompression.kernels.base_model_free import BaseModelFree
+from lzcompression.kernels import BaseModelFree
 from lzcompression.types import FloatArrayType, KernelInputType, LossType, SVDStrategy
 
 

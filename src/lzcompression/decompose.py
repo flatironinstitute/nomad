@@ -2,12 +2,10 @@ import numpy as np
 from typing import Optional, Union
 import time
 import logging
-from lzcompression.kernels.kernel_base import KernelBase
-from lzcompression.kernels.base_model_free import BaseModelFree
-from lzcompression.kernels.rowwise_variance_gauss_model import (
+from lzcompression.kernels import (
+    KernelBase,
+    BaseModelFree,
     RowwiseVarianceGaussianModelKernel,
-)
-from lzcompression.kernels.single_variance_gauss_model import (
     SingleVarianceGaussianModelKernel,
 )
 
@@ -15,6 +13,7 @@ from lzcompression.types import (
     FloatArrayType,
     InitializationStrategy,
     KernelInputType,
+    KernelSpecificParameters,
     KernelReturnDataType,
     KernelStrategy,
     SVDStrategy,
@@ -26,7 +25,15 @@ from lzcompression.util.util import (
 logger = logging.getLogger(__name__)
 
 
-def instantiate_kernel(s: KernelStrategy, data_in: KernelInputType) -> KernelBase:
+def instantiate_kernel(
+    s: KernelStrategy,
+    data_in: KernelInputType,
+    kernel_params: Optional[KernelSpecificParameters] = None,
+) -> KernelBase:
+    if kernel_params is not None:
+        raise NotImplementedError(
+            "No kernel is using these yet. Remove this note when implemented."
+        )
     if s == KernelStrategy.BASE_MODEL_FREE:
         return BaseModelFree(data_in)
     if s == KernelStrategy.GAUSSIAN_MODEL_SINGLE_VARIANCE:
@@ -89,6 +96,7 @@ def decompose(
     svd_strategy: SVDStrategy = SVDStrategy.RANDOM_TRUNCATED,
     initialization: InitializationStrategy = InitializationStrategy.BROADCAST_MEAN,
     initial_guess_matrix: Union[FloatArrayType, None] = None,
+    kernel_params: Optional[KernelSpecificParameters] = None,
     tolerance: Union[float, None] = None,
     manual_max_iterations: Union[int, None] = None,
     verbose: bool = False,

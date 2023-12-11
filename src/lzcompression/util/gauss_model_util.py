@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm as normal  # type: ignore
 from typing import Union, cast, Any
 
-from lzcompression.types import (
+from lzcompression.types.types import (
     FloatArrayType,
 )
 from lzcompression.util.util import (

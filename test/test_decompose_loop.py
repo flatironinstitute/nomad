@@ -2,7 +2,7 @@ from typing import cast
 import numpy as np
 from unittest.mock import Mock, patch
 from pytest import raises, LogCaptureFixture
-from lzcompression.kernels.kernel_base import KernelBase
+from lzcompression.kernels import KernelBase
 
 from lzcompression.decompose import (
     compute_max_iterations,

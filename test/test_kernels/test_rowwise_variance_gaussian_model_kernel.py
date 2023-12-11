@@ -3,7 +3,7 @@ import numpy as np
 from unittest.mock import Mock, patch
 from pytest import LogCaptureFixture
 
-from lzcompression.kernels.rowwise_variance_gauss_model import (
+from lzcompression.kernels import (
     RowwiseVarianceGaussianModelKernel,
 )
 from lzcompression.types import (
