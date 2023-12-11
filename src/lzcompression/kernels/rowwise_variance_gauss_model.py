@@ -25,10 +25,11 @@ from lzcompression.util.gauss_model_util import (
 
 logger = logging.getLogger(__name__)
 
-## TODO: Probably more efficient, rather than storing the lower-d and re-broadcasting, to just keep
-# the rowwise variance around as a full matrix.
-# This is going to be very memory-intensive though, unfortunately...
-# Need to think about this.
+## Note:
+# tested storing the rowwise variances as a full matrix rather than per-row.
+# It might be marginally faster, but the results were inconclusive:
+# average of maybe 2% speedup, and actually slower for 60% of the trials.
+# Leave as is for now.
 
 
 class RowwiseVarianceGaussianModelKernel(KernelBase):
