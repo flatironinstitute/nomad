@@ -2,6 +2,7 @@ from typing import cast
 import numpy as np
 from unittest.mock import Mock, patch
 from pytest import approx
+import pytest
 from lzcompression.types import FloatArrayType
 
 from lzcompression.util.gauss_model_util import (
@@ -15,6 +16,18 @@ from lzcompression.util.gauss_model_util import (
 )
 
 
+@pytest.fixture
+def threeByFourMatrix() -> FloatArrayType:
+    # fmt: off
+    matrix = np.array([
+        [1, 2, 0, 0],
+        [0, 1, 2, 0],
+        [3, 0, 3, 1]
+    ])
+    # fmt: on
+    return matrix
+
+
 def test_broadcast_rowwise_variance_with_scalar() -> None:
     var = 1.0
     target = np.eye(3)
@@ -24,14 +37,10 @@ def test_broadcast_rowwise_variance_with_scalar() -> None:
     assert isinstance(result, float)
 
 
-def test_broadcast_rowwise_variance_with_vector() -> None:
-    # fmt: off
-    matrix = np.array([
-        [1, 2, 0, 0],
-        [0, 1, 2, 0],
-        [3, 0, 3, 1]
-    ])
-    # fmt: on
+def test_broadcast_rowwise_variance_with_vector(
+    threeByFourMatrix: FloatArrayType,
+) -> None:
+    matrix = threeByFourMatrix
     var = np.var(matrix, axis=1)
     result = cast(FloatArrayType, broadcast_rowwise_variance(var, matrix))
     assert result.shape == matrix.shape
@@ -39,14 +48,10 @@ def test_broadcast_rowwise_variance_with_vector() -> None:
         np.testing.assert_array_equal(result[:, k], var)
 
 
-def test_broadcast_rowwise_variance_with_scalar_filter() -> None:
-    # fmt: off
-    matrix = np.array([
-        [1, 2, 0, 0],
-        [0, 1, 2, 0],
-        [3, 0, 3, 1]
-    ])
-    # fmt: on
+def test_broadcast_rowwise_variance_with_scalar_filter(
+    threeByFourMatrix: FloatArrayType,
+) -> None:
+    matrix = threeByFourMatrix
     var = np.var(matrix, axis=1)
     filter = matrix != 0
     result = cast(
@@ -128,16 +133,18 @@ def test_get_stddev_normalized_matrix_gamma_scalar_variance() -> None:
     np.testing.assert_allclose(expected_result, res)
 
 
-def test_get_stddev_normalized_matrix_gamma_rowwise_variance() -> None:
-    input = np.array([[1, 2, 0, 0], [0, 1, 2, 0], [3, 0, 3, 1]])
-    sigma_squared = np.var(input, axis=1)
+def test_get_stddev_normalized_matrix_gamma_rowwise_variance(
+    threeByFourMatrix: FloatArrayType,
+) -> None:
+    sparse = threeByFourMatrix
+    sigma_squared = np.var(sparse, axis=1)
     # intentionally simplistic--otherwise we'd just be duplicating the implementation code
     expected_result = [
-        input[0] / np.sqrt(np.var(input[0])),
-        input[1] / np.sqrt(np.var(input[1])),
-        input[2] / np.sqrt(np.var(input[2])),
+        sparse[0] / np.sqrt(np.var(sparse[0])),
+        sparse[1] / np.sqrt(np.var(sparse[1])),
+        sparse[2] / np.sqrt(np.var(sparse[2])),
     ]
-    res = get_stddev_normalized_matrix_gamma(input, sigma_squared)
+    res = get_stddev_normalized_matrix_gamma(sparse, sigma_squared)
     np.testing.assert_allclose(expected_result, res)
 
 
@@ -185,15 +192,10 @@ def test_get_elementwise_posterior_variance_dZbar_computes_variances_where_neede
     np.testing.assert_allclose(result[sparse > 0], np.zeros((3, 3))[sparse > 0])
 
 
-def test_get_elementwise_posterior_variance_dZbar_handles_vector_variance() -> None:
-    # fmt: off
-    sparse = np.array([
-        [1, 2, 0, 0],
-        [0, 1, 2, 0],
-        [3, 0, 3, 1]
-    ])
-    # fmt: on
-
+def test_get_elementwise_posterior_variance_dZbar_handles_vector_variance(
+    threeByFourMatrix: FloatArrayType,
+) -> None:
+    sparse = threeByFourMatrix
     var = np.var(sparse, axis=1)
     stddev_normalized_model_matrix = np.array(range(12)).reshape((3, 4)) * 0.1
     # fmt: off

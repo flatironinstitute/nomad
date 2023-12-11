@@ -1,7 +1,8 @@
-from typing import cast
+from typing import Tuple, cast
 import numpy as np
 from unittest.mock import Mock, patch
 from pytest import LogCaptureFixture
+import pytest
 
 from lzcompression.kernels import (
     RowwiseVarianceGaussianModelKernel,
@@ -12,44 +13,46 @@ from lzcompression.types import (
     SVDStrategy,
 )
 
+Fixture = Tuple[KernelInputType, RowwiseVarianceGaussianModelKernel]
 
-def make_default_kernel_initialization() -> KernelInputType:
+
+@pytest.fixture
+def fixture() -> Fixture:
     default_sparse = np.eye(3) * 3
     default_candidate = np.ones(default_sparse.shape)
     default_target_rank = 2
     default_svd_strategy = SVDStrategy.RANDOM_TRUNCATED
     default_tolerance = 3.0
-    return KernelInputType(
+    indata = KernelInputType(
         default_sparse,
         default_candidate,
         default_target_rank,
         default_svd_strategy,
         default_tolerance,
     )
+    kernel = RowwiseVarianceGaussianModelKernel(indata)
+    return (indata, kernel)
 
 
-def test_rowwise_variance_gauss_model_inits_correctly() -> None:
-    indata = make_default_kernel_initialization()
+def test_rowwise_variance_gauss_model_inits_correctly(fixture: Fixture) -> None:
+    (indata, kernel) = fixture
     variance = np.var(indata.sparse_matrix_X, axis=1)
     shape = indata.low_rank_candidate_L.shape
     denom = np.repeat(np.sqrt(variance), shape[1]).reshape(shape)
     sparse_over_sqrt_variance = indata.low_rank_candidate_L / denom
 
-    kernel = RowwiseVarianceGaussianModelKernel(indata)
     np.testing.assert_array_equal(kernel.model_variance_sigma_squared, variance)
     np.testing.assert_array_equal(sparse_over_sqrt_variance, kernel.gamma)
 
 
-def test_rowwise_variance_gauss_model_running_report() -> None:
-    indata = make_default_kernel_initialization()
-    kernel = RowwiseVarianceGaussianModelKernel(indata)
+def test_rowwise_variance_gauss_model_running_report(fixture: Fixture) -> None:
+    (_, kernel) = fixture
     txt = kernel.running_report()
     assert "Likelihoods" in txt
 
 
-def test_rowwise_variance_gauss_model_final_report() -> None:
-    indata = make_default_kernel_initialization()
-    kernel = RowwiseVarianceGaussianModelKernel(indata)
+def test_rowwise_variance_gauss_model_final_report(fixture: Fixture) -> None:
+    (indata, kernel) = fixture
     result = kernel.report()
     assert "0 total iterations" in result.summary
     assert "final loss" in result.summary
@@ -64,10 +67,9 @@ def test_rowwise_variance_gauss_model_final_report() -> None:
 
 
 def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_full_iteration(
-    caplog: LogCaptureFixture,
+    caplog: LogCaptureFixture, fixture: Fixture
 ) -> None:
-    indata = make_default_kernel_initialization()
-    kernel = RowwiseVarianceGaussianModelKernel(indata)
+    (_, kernel) = fixture
     kernel.likelihood = float("inf")
     kernel.step()
     assert "Likelihood decreased," in caplog.text
@@ -77,11 +79,10 @@ def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_full_iterati
     "lzcompression.kernels.rowwise_variance_gauss_model.target_matrix_log_likelihood"
 )
 def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_half_iteration(
-    mock_likelihood: Mock, caplog: LogCaptureFixture
+    mock_likelihood: Mock, caplog: LogCaptureFixture, fixture: Fixture
 ) -> None:
+    (_, kernel) = fixture
     mock_likelihood.side_effect = [10, -10]
-    indata = make_default_kernel_initialization()
-    kernel = RowwiseVarianceGaussianModelKernel(indata)
     kernel.step()
     assert "Likelihood decreased between variance update and means" in caplog.text
 
@@ -94,15 +95,14 @@ def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_half_iterati
     "lzcompression.kernels.rowwise_variance_gauss_model.get_stddev_normalized_matrix_gamma"
 )
 def test_rowwise_variance_means_update(
-    mock_gamma: Mock, mock_lowrank: Mock, mock_scale: Mock
+    mock_gamma: Mock, mock_lowrank: Mock, mock_scale: Mock, fixture: Fixture
 ) -> None:
     mock_gamma.return_value = np.eye(3)
     mock_lowrank.return_value = np.eye(3) * 2
     mock_scale.return_value = np.eye(3) * 3
     post_means = np.eye(3) * 4
 
-    indata = make_default_kernel_initialization()
-    kernel = RowwiseVarianceGaussianModelKernel(indata)
+    (_, kernel) = fixture
     mock_gamma.reset_mock()
     mock_gamma.return_value = np.eye(3)
     kernel.do_means_update(post_means)
@@ -144,10 +144,10 @@ def test_rowwise_variance_step_calls(
     mock_lowrank: Mock,
     mock_scale: Mock,
     mock_loss: Mock,
+    fixture: Fixture,
 ) -> None:
     mock_likelihood.return_value = 5.0
-    indata = make_default_kernel_initialization()
-    kernel = RowwiseVarianceGaussianModelKernel(indata)
+    (_, kernel) = fixture
     mock_getgamma.reset_mock()
     kernel.step()
 

@@ -1,7 +1,8 @@
-from typing import cast
+from typing import Tuple, cast
 import numpy as np
 from unittest.mock import Mock, patch
 from pytest import LogCaptureFixture
+import pytest
 
 from lzcompression.kernels import (
     SingleVarianceGaussianModelKernel,
@@ -13,44 +14,47 @@ from lzcompression.types import (
 )
 
 
-def make_default_kernel_initialization() -> KernelInputType:
+Fixture = Tuple[KernelInputType, SingleVarianceGaussianModelKernel]
+
+
+@pytest.fixture
+def fixture() -> Fixture:
     default_sparse = np.eye(3) * 3
     default_candidate = np.ones(default_sparse.shape)
     default_target_rank = 2
     default_svd_strategy = SVDStrategy.RANDOM_TRUNCATED
     default_tolerance = 3.0
-    return KernelInputType(
+    indata = KernelInputType(
         default_sparse,
         default_candidate,
         default_target_rank,
         default_svd_strategy,
         default_tolerance,
     )
+    kernel = SingleVarianceGaussianModelKernel(indata)
+    return (indata, kernel)
 
 
-def test_single_variance_gauss_model_inits_correctly() -> None:
-    indata = make_default_kernel_initialization()
+def test_single_variance_gauss_model_inits_correctly(fixture: Fixture) -> None:
+    (indata, kernel) = fixture
 
     variance = float(np.var(indata.sparse_matrix_X))  # s.b. 2.0 with eye(3) * 3
     # just a reminder, this is initialized based on the current estimate for the means
     # *not* on the input sparse matrix
     sparse_over_sqrt_variance = indata.low_rank_candidate_L / np.sqrt(variance)
 
-    kernel = SingleVarianceGaussianModelKernel(indata)
     assert kernel.model_variance_sigma_squared == variance
     np.testing.assert_array_equal(sparse_over_sqrt_variance, kernel.gamma)
 
 
-def test_single_variance_gauss_model_running_report() -> None:
-    indata = make_default_kernel_initialization()
-    kernel = SingleVarianceGaussianModelKernel(indata)
+def test_single_variance_gauss_model_running_report(fixture: Fixture) -> None:
+    (_, kernel) = fixture
     txt = kernel.running_report()
     assert "Iteration 0" in txt
 
 
-def test_single_variance_gauss_model_final_report() -> None:
-    indata = make_default_kernel_initialization()
-    kernel = SingleVarianceGaussianModelKernel(indata)
+def test_single_variance_gauss_model_final_report(fixture: Fixture) -> None:
+    (indata, kernel) = fixture
     result = kernel.report()
     assert "0 total iterations" in result.summary
     assert "final loss" in result.summary
@@ -62,7 +66,7 @@ def test_single_variance_gauss_model_final_report() -> None:
     assert result_data.variance == float(np.var(indata.sparse_matrix_X))
 
 
-# TODO: These are not very interesting assertions
+# These are not very interesting assertions
 @patch("lzcompression.kernels.single_variance_gauss_model.compute_loss")
 @patch("lzcompression.kernels.single_variance_gauss_model.target_matrix_log_likelihood")
 @patch(
@@ -82,6 +86,7 @@ def test_single_variance_gauss_model_step(
     mock_getgamma: Mock,
     mock_likelihood: Mock,
     mock_loss: Mock,
+    fixture: Fixture,
 ) -> None:
     mock_get_postmeans.return_value = np.full((3, 3), 1)
     mock_get_postvar.return_value = np.full((3, 3), 2)
@@ -91,9 +96,7 @@ def test_single_variance_gauss_model_step(
     mock_likelihood.return_value = 0.5
     mock_loss.return_value = 1.0
 
-    indata = make_default_kernel_initialization()
-    kernel = SingleVarianceGaussianModelKernel(indata)
-
+    (_, kernel) = fixture
     kernel.step()
 
     mock_get_postmeans.assert_called_once()
@@ -112,10 +115,9 @@ def test_single_variance_gauss_model_step(
 
 
 def test_single_variance_gauss_model_warns_on_decreased_likelihood(
-    caplog: LogCaptureFixture,
+    caplog: LogCaptureFixture, fixture: Fixture
 ) -> None:
-    indata = make_default_kernel_initialization()
-    kernel = SingleVarianceGaussianModelKernel(indata)
+    (_, kernel) = fixture
     kernel.likelihood = float("inf")
     kernel.step()
     assert "Likelihood decreased" in caplog.text

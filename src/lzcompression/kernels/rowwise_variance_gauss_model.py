@@ -137,7 +137,6 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
         likelihood = self.do_post_update()
 
         ### Monitor likelihood:
-        # TODO: don't hard-code this warning here
         if likelihood < self.likelihood:
             logger.warning(
                 f"Iteration {self.elapsed_iterations}: Likelihood decreased, from {self.likelihood} to {likelihood}"

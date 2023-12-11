@@ -252,4 +252,4 @@ def test_decompose_honors_verbosity(caplog: LogCaptureFixture) -> None:
     assert "Initiating run" in caplog.text
 
 
-# TODO: Could add some tests that the timing features are actually working
+# Could add some tests that the timing features are actually working

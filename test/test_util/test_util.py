@@ -2,9 +2,12 @@ import numpy as np
 import sys
 from unittest.mock import Mock, patch
 from pytest import approx, raises
-from typing import cast
+from typing import Callable, Tuple, cast
+
+import pytest
 
 from lzcompression.types import InitializationStrategy, SVDStrategy, LossType
+from lzcompression.types.types import FloatArrayType
 from lzcompression.util.util import (
     initialize_low_rank_candidate,
     _squared_difference_loss,
@@ -18,41 +21,34 @@ from lzcompression.util.util import (
 )
 
 
-def test_initialize_returns_copy() -> None:
+@pytest.fixture
+def init_matrix() -> FloatArrayType:
     # fmt: off
     base_matrix = np.array([
         [ 1,  5,  0],
         [ 0,  0,  0]
     ])
     # fmt: on
-    res = initialize_low_rank_candidate(base_matrix, InitializationStrategy.COPY)
-    np.testing.assert_allclose(base_matrix, res)
+    return base_matrix
 
 
-def test_initialize_returns_copy_on_known_matrix() -> None:
-    # fmt: off
-    base_matrix = np.array([
-        [ 1,  5,  0],
-        [ 0,  0,  0]
-    ])
-    # fmt: on
+def test_initialize_returns_copy(init_matrix: FloatArrayType) -> None:
+    res = initialize_low_rank_candidate(init_matrix, InitializationStrategy.COPY)
+    np.testing.assert_allclose(init_matrix, res)
+
+
+def test_initialize_returns_copy_on_known_matrix(init_matrix: FloatArrayType) -> None:
     res = initialize_low_rank_candidate(
-        base_matrix, InitializationStrategy.KNOWN_MATRIX
+        init_matrix, InitializationStrategy.KNOWN_MATRIX
     )
-    np.testing.assert_allclose(base_matrix, res)
+    np.testing.assert_allclose(init_matrix, res)
 
 
-def test_initialize_returns_mean() -> None:
-    # fmt: off
-    base_matrix = np.array([
-        [ 1,  5,  0],
-        [ 0,  0,  0]
-    ])
-    # fmt: on
+def test_initialize_returns_mean(init_matrix: FloatArrayType) -> None:
     res = initialize_low_rank_candidate(
-        base_matrix, InitializationStrategy.BROADCAST_MEAN
+        init_matrix, InitializationStrategy.BROADCAST_MEAN
     )
-    expected = np.ones((2, 3))
+    expected = np.mean(init_matrix)
     np.testing.assert_allclose(res, expected)
 
 
@@ -157,6 +153,13 @@ def test_compute_loss_throws_on_bad_loss_type() -> None:
 
 
 #### SVD
+SVDFnType = Callable[[FloatArrayType, int], FloatArrayType]
+
+
+# Wrapper fn since this one has a different signature from the others
+def _find_low_rank_full_wrapper(shape: Tuple[int, int]) -> SVDFnType:
+    allocated_memory = np.zeros(shape)
+    return lambda matrix, rank: _find_low_rank_full(matrix, rank, allocated_memory)
 
 
 def test_find_low_rank_full_uses_preallocated_memory() -> None:
@@ -166,14 +169,29 @@ def test_find_low_rank_full_uses_preallocated_memory() -> None:
     assert result is allocated_memory
 
 
-def test_find_low_rank_full_matches_shape_of_input_matrix() -> None:
+@pytest.mark.parametrize(
+    "svdfn",
+    [
+        _find_low_rank_full_wrapper((6, 7)),
+        _find_low_rank_random_truncated,
+        _find_low_rank_exact_truncated,
+    ],
+)
+def test_svd_fns_match_shape_of_input_matrix(svdfn: SVDFnType) -> None:
     arbitrary_matrix = np.random.random_sample((6, 7))
-    allocated_memory = np.zeros(arbitrary_matrix.shape)
-    result = _find_low_rank_full(arbitrary_matrix, 3, allocated_memory)
+    result = svdfn(arbitrary_matrix, 3)
     assert result.shape == arbitrary_matrix.shape
 
 
-def test_find_low_rank_full_recovers_known_result() -> None:
+@pytest.mark.parametrize(
+    "svdfn",
+    [
+        _find_low_rank_full_wrapper((3, 3)),
+        _find_low_rank_random_truncated,
+        _find_low_rank_exact_truncated,
+    ],
+)
+def test_svd_fns_recover_known_result(svdfn: SVDFnType) -> None:
     # fmt: off
     low_rank_input = np.array([
         [1.0,   4.0,  -3.0],
@@ -181,74 +199,26 @@ def test_find_low_rank_full_recovers_known_result() -> None:
         [3.0,  12.0,  -9.0]
     ])
     # fmt: on
-    allocated_memory = np.zeros(low_rank_input.shape)
-    result = _find_low_rank_full(low_rank_input, 1, allocated_memory)
+    result = svdfn(low_rank_input, 1)
     np.testing.assert_array_almost_equal(low_rank_input, result)
 
 
-def test_find_low_rank_full_recovers_full_rank_input_when_allowed_full_rank() -> None:
+# Note: "Exact Truncated" method omitted for this
+# Since the underlying SVD solver cannot recover a full-rank matrix
+@pytest.mark.parametrize(
+    "svdfn", [_find_low_rank_full_wrapper((2, 3)), _find_low_rank_random_truncated]
+)
+def test_svd_fns_recover_full_rank_input_when_allowed_full_rank(
+    svdfn: SVDFnType,
+) -> None:
     # fmt: off
     base_matrix = np.array([
         [3.0,  2.0,   2.0],
         [2.0,  3.0,  -2.0]
     ])
     # fmt: on
-    allocated_memory = np.zeros(base_matrix.shape)
-    returned_val = _find_low_rank_full(base_matrix, sys.maxsize, allocated_memory)
+    returned_val = svdfn(base_matrix, max(base_matrix.shape))
     np.testing.assert_array_almost_equal(base_matrix, returned_val)
-
-
-def test_find_low_rank_rt_matches_shape_of_input_matrix() -> None:
-    arbitrary_matrix = np.random.random_sample((6, 7))
-    result = _find_low_rank_random_truncated(arbitrary_matrix, 3)
-    assert result.shape == arbitrary_matrix.shape
-
-
-def test_find_low_rank_rt_recovers_known_result() -> None:
-    # fmt: off
-    low_rank_input = np.array([
-        [1.0,   4.0,  -3.0],
-        [2.0,   8.0,  -6.0],
-        [3.0,  12.0,  -9.0]
-    ])
-    # fmt: on
-    result = _find_low_rank_random_truncated(low_rank_input, 1)
-    np.testing.assert_array_almost_equal(low_rank_input, result)
-
-
-def test_find_low_rank_rt_recovers_full_rank_input_when_allowed_full_rank() -> None:
-    # fmt: off
-    base_matrix = np.array([
-        [3.0,  2.0,   2.0],
-        [2.0,  3.0,  -2.0]
-    ])
-    # fmt: on
-    returned_val = _find_low_rank_random_truncated(base_matrix, max(base_matrix.shape))
-    np.testing.assert_array_almost_equal(base_matrix, returned_val)
-
-
-def test_find_low_rank_t_matches_shape_of_input_matrix() -> None:
-    arbitrary_matrix = np.random.random_sample((6, 7))
-    result = _find_low_rank_exact_truncated(arbitrary_matrix, 3)
-    assert result.shape == arbitrary_matrix.shape
-
-
-def test_find_low_rank_t_recovers_known_result() -> None:
-    # fmt: off
-    low_rank_input = np.array([
-        [1.0,   4.0,  -3.0],
-        [2.0,   8.0,  -6.0],
-        [3.0,  12.0,  -9.0]
-    ])
-    # fmt: on
-    result = _find_low_rank_exact_truncated(low_rank_input, 1)
-    np.testing.assert_array_almost_equal(low_rank_input, result)
-
-
-def test_find_low_rank_t_recovers_full_rank_input_when_allowed_full_rank() -> None:
-    # when using the arpack algorithm, the underlying SVD solver cannot recover a
-    # full-rank matrix: you can only set the target to less than min(shape).
-    pass
 
 
 @patch("lzcompression.util.util._find_low_rank_random_truncated")
