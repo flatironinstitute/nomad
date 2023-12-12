@@ -31,10 +31,10 @@ file = "LICENSE"
 [project.optional-dependencies]
 dev = [
     "black >= 23.3.0",
-    "mypy >= 1.4.1",
-    "pytest >= 7.4.3"
+    "mypy >= 1.4.1"
 ]
 test = [
+    "pytest >= 7.4.3",
     "pytest-cov >=4.1.0"
 ]
 
