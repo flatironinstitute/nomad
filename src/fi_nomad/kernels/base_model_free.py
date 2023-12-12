@@ -1,13 +1,13 @@
-from lzcompression.kernels.kernel_base import KernelBase
-from lzcompression.util.base_model_free_util import construct_utility
+from fi_nomad.kernels.kernel_base import KernelBase
+from fi_nomad.util.base_model_free_util import construct_utility
 
-from lzcompression.types import (
+from fi_nomad.types import (
     BaseModelFreeKernelReturnType,
     KernelInputType,
     KernelReturnType,
     LossType,
 )
-from lzcompression.util.util import (
+from fi_nomad.util.util import (
     find_low_rank,
     compute_loss,
 )
@@ -67,5 +67,4 @@ class BaseModelFree(KernelBase):
         return KernelReturnType(text, data)
 
 
-# TODO:
 # Consider secondary evaluation criteria, e.g. promoting bimodal/higher-variance ditsributions of negative values in answer

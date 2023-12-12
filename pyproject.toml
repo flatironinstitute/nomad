@@ -4,10 +4,10 @@ build-backend="setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["lzcompression"]
+packages = ["fi_nomad"]
 
 [project]
-name = "lzcompression"
+name = "fi_nomad"
 version = "0.0.1"
 description = "Nonlinear matrix decomposition package"
 authors = [
@@ -31,7 +31,8 @@ file = "LICENSE"
 [project.optional-dependencies]
 dev = [
     "black >= 23.3.0",
-    "mypy >= 1.4.1"
+    "mypy >= 1.4.1",
+    "pytest >= 7.4.3"
 ]
 test = [
     "pytest-cov >=4.1.0"

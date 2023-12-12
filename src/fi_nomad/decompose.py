@@ -2,14 +2,14 @@ import numpy as np
 from typing import Optional, Union
 import time
 import logging
-from lzcompression.kernels import (
+from fi_nomad.kernels import (
     KernelBase,
     BaseModelFree,
     RowwiseVarianceGaussianModelKernel,
     SingleVarianceGaussianModelKernel,
 )
 
-from lzcompression.types import (
+from fi_nomad.types import (
     FloatArrayType,
     InitializationStrategy,
     KernelInputType,
@@ -18,7 +18,7 @@ from lzcompression.types import (
     KernelStrategy,
     SVDStrategy,
 )
-from lzcompression.util.util import (
+from fi_nomad.util.util import (
     initialize_low_rank_candidate,
 )
 

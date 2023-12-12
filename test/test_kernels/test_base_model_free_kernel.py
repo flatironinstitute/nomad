@@ -3,10 +3,11 @@ import numpy as np
 from unittest.mock import Mock, patch
 
 import pytest
-from lzcompression.kernels import BaseModelFree
-from lzcompression.types import FloatArrayType, KernelInputType, LossType, SVDStrategy
+from fi_nomad.kernels import BaseModelFree
+from fi_nomad.types import FloatArrayType, KernelInputType, LossType, SVDStrategy
 
 Fixture = Tuple[KernelInputType, BaseModelFree]
+PKG = "fi_nomad.kernels.base_model_free"
 
 
 @pytest.fixture
@@ -34,9 +35,9 @@ def fixture_no_tol() -> Fixture:
     return (indata, kernel)
 
 
-@patch("lzcompression.kernels.base_model_free.compute_loss")
-@patch("lzcompression.kernels.base_model_free.find_low_rank")
-@patch("lzcompression.kernels.base_model_free.construct_utility")
+@patch(f"{PKG}.compute_loss")
+@patch(f"{PKG}.find_low_rank")
+@patch(f"{PKG}.construct_utility")
 def test_base_model_free_kernel_step(
     mock_construct: Mock,
     mock_find_low_rank: Mock,
@@ -64,9 +65,9 @@ def test_base_model_free_kernel_step(
     assert kernel.loss == mock_compute_loss.return_value
 
 
-@patch("lzcompression.kernels.base_model_free.compute_loss")
-@patch("lzcompression.kernels.base_model_free.find_low_rank")
-@patch("lzcompression.kernels.base_model_free.construct_utility")
+@patch(f"{PKG}.compute_loss")
+@patch(f"{PKG}.find_low_rank")
+@patch(f"{PKG}.construct_utility")
 def test_base_model_free_kernel_step_skips_setting_loss_if_unset_tolerance(
     mock_construct: Mock,
     mock_find_low_rank: Mock,

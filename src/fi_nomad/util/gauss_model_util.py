@@ -2,10 +2,10 @@ import numpy as np
 from scipy.stats import norm as normal  # type: ignore
 from typing import Union, cast, Any
 
-from lzcompression.types.types import (
+from fi_nomad.types.types import (
     FloatArrayType,
 )
-from lzcompression.util.util import (
+from fi_nomad.util.util import (
     pdf_to_cdf_ratio_psi,
 )
 

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Union
 
-from lzcompression.types import (
+from fi_nomad.types import (
     FloatArrayType,
     KernelInputType,
     KernelReturnType,

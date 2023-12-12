@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
-from lzcompression.decompose import decompose
-from lzcompression.types import KernelStrategy
-from lzcompression.util.util import compute_loss
+from fi_nomad.decompose import decompose
+from fi_nomad.types import KernelStrategy
+from fi_nomad.util.util import compute_loss
 
 pytestmark = pytest.mark.integration
 
@@ -11,6 +11,7 @@ all_kernels = [
     KernelStrategy.GAUSSIAN_MODEL_SINGLE_VARIANCE,
     KernelStrategy.GAUSSIAN_MODEL_ROWWISE_VARIANCE,
 ]
+BASE_MODEL_FREE_ELEVENS_ATOL = 0.002
 
 # fmt: off
 eleven_matrix = np.array(
@@ -69,6 +70,6 @@ def test_model_kernel_elevens_matrix_recovery(kernel: KernelStrategy) -> None:
     relu_l = np.copy(result.reconstruction)
     relu_l[relu_l < 0] = 0
     if kernel == KernelStrategy.BASE_MODEL_FREE:
-        assert np.allclose(relu_l, eleven_matrix, atol=0.002)
+        assert np.allclose(relu_l, eleven_matrix, atol=BASE_MODEL_FREE_ELEVENS_ATOL)
     else:
         assert np.allclose(relu_l, eleven_matrix)

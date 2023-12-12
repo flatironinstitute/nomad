@@ -4,10 +4,10 @@ from unittest.mock import Mock, patch
 from pytest import LogCaptureFixture
 import pytest
 
-from lzcompression.kernels import (
+from fi_nomad.kernels import (
     SingleVarianceGaussianModelKernel,
 )
-from lzcompression.types import (
+from fi_nomad.types import (
     KernelInputType,
     SVDStrategy,
     SingleVarianceGaussianModelKernelReturnType,
@@ -15,6 +15,7 @@ from lzcompression.types import (
 
 
 Fixture = Tuple[KernelInputType, SingleVarianceGaussianModelKernel]
+PKG = "fi_nomad.kernels.single_variance_gauss_model"
 
 
 @pytest.fixture
@@ -67,17 +68,13 @@ def test_single_variance_gauss_model_final_report(fixture: Fixture) -> None:
 
 
 # These are not very interesting assertions
-@patch("lzcompression.kernels.single_variance_gauss_model.compute_loss")
-@patch("lzcompression.kernels.single_variance_gauss_model.target_matrix_log_likelihood")
-@patch(
-    "lzcompression.kernels.single_variance_gauss_model.get_stddev_normalized_matrix_gamma"
-)
-@patch("lzcompression.kernels.single_variance_gauss_model.estimate_new_model_variance")
-@patch("lzcompression.kernels.single_variance_gauss_model.find_low_rank")
-@patch(
-    "lzcompression.kernels.single_variance_gauss_model.get_elementwise_posterior_variance_dZbar"
-)
-@patch("lzcompression.kernels.single_variance_gauss_model.get_posterior_means_Z")
+@patch(f"{PKG}.compute_loss")
+@patch(f"{PKG}.target_matrix_log_likelihood")
+@patch(f"{PKG}.get_stddev_normalized_matrix_gamma")
+@patch(f"{PKG}.estimate_new_model_variance")
+@patch(f"{PKG}.find_low_rank")
+@patch(f"{PKG}.get_elementwise_posterior_variance_dZbar")
+@patch(f"{PKG}.get_posterior_means_Z")
 def test_single_variance_gauss_model_step(
     mock_get_postmeans: Mock,
     mock_get_postvar: Mock,

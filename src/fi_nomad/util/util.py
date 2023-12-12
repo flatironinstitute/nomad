@@ -3,7 +3,7 @@ from sklearn.decomposition import TruncatedSVD  # type: ignore
 from scipy.stats import norm as normal  # type: ignore
 from typing import cast, Union
 
-from lzcompression.types import (
+from fi_nomad.types import (
     FloatArrayType,
     InitializationStrategy,
     SVDStrategy,

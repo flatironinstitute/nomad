@@ -28,10 +28,10 @@ The library is currently accessed through Python calls (interactive REPL, script
 
 Only numpy is used extensively, but the other libraries offer more convenient implementations of some of the statistical operations.
 
-As the `lzcompression` package is not yet published, you'll need to install it in local mode. The easiest way to do this is to:
+As the `fi_nomad` package is not yet published, you'll need to install it in local mode. The easiest way to do this is to:
 - Clone this repository and change into it
 - Ensure your appropriate environment is active
-- `pip install -e .` to make `lzcompression` an installed package for the environment
+- `pip install -e .` to make `fi_nomad` an installed package for the environment
 
 We'll publish to `pypi` once we're out of alpha and have picked a good name.
 
@@ -40,8 +40,8 @@ We'll publish to `pypi` once we're out of alpha and have picked a good name.
 Load the observed non-negative matrix `X` as a numpy array:
 
 ```python
-from lzcompression.decompose import decompose
-from lzcompression.types import KernelStrategy
+from fi_nomad.decompose import decompose
+from fi_nomad.types import KernelStrategy
 import numpy as np
 import logging
 
@@ -81,7 +81,7 @@ print(relu_L)
 
 ### Additional Features
 
-The main entry point for the model-based low-rank matrix estimation is `lzcompression.decompose.decompose`.
+The main entry point for the model-based low-rank matrix estimation is `fi_nomad.decompose.decompose`.
 Three parameters are required:
 - the sparse nonnegative matrix
 - the target rank

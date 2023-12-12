@@ -3,9 +3,9 @@ import numpy as np
 from unittest.mock import Mock, patch
 from pytest import approx
 import pytest
-from lzcompression.types import FloatArrayType
+from fi_nomad.types import FloatArrayType
 
-from lzcompression.util.gauss_model_util import (
+from fi_nomad.util.gauss_model_util import (
     broadcast_rowwise_variance,
     get_posterior_means_Z,
     estimate_new_model_variance,
@@ -14,6 +14,9 @@ from lzcompression.util.gauss_model_util import (
     scale_by_rowwise_stddev,
     target_matrix_log_likelihood,
 )
+
+
+PKG = "fi_nomad.util.gauss_model_util"
 
 
 @pytest.fixture
@@ -60,9 +63,9 @@ def test_broadcast_rowwise_variance_with_scalar_filter(
     assert result.shape == matrix[filter].shape
 
 
-# The import happens in lzcompression.util.gauss_model_util, we need to
+# The import happens in fi_nomad.util.gauss_model_util, we need to
 # patch what *that* imported, not what the base implementation is.
-@patch("lzcompression.util.gauss_model_util.pdf_to_cdf_ratio_psi")
+@patch(f"{PKG}.pdf_to_cdf_ratio_psi")
 def test_get_posterior_means_Z_scalar_variance(mock_psi: Mock) -> None:
     # Mocked pdf-to-cdf-ratio fn to return its input,
     # so in the SUT it will return -1 * stddev_norm (i.e. -3)
@@ -79,7 +82,7 @@ def test_get_posterior_means_Z_scalar_variance(mock_psi: Mock) -> None:
     np.testing.assert_allclose(res, expected)
 
 
-@patch("lzcompression.util.gauss_model_util.pdf_to_cdf_ratio_psi")
+@patch(f"{PKG}.pdf_to_cdf_ratio_psi")
 def test_get_posterior_means_Z_rowwise_variance(mock_psi: Mock) -> None:
     # Mocked pdf-to-cdf-ratio fn to return its input,
     # so in the SUT it will return -1 * stddev_norm (i.e. -3)

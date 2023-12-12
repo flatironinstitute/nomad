@@ -1,20 +1,20 @@
 from typing import Tuple, cast
 import numpy as np
 import logging
-from lzcompression.kernels.kernel_base import KernelBase
+from fi_nomad.kernels.kernel_base import KernelBase
 
-from lzcompression.types import (
+from fi_nomad.types import (
     FloatArrayType,
     RowwiseVarianceGaussianModelKernelReturnType,
     KernelInputType,
     KernelReturnType,
     LossType,
 )
-from lzcompression.util.util import (
+from fi_nomad.util.util import (
     compute_loss,
     find_low_rank,
 )
-from lzcompression.util.gauss_model_util import (
+from fi_nomad.util.gauss_model_util import (
     get_stddev_normalized_matrix_gamma,
     get_posterior_means_Z,
     get_elementwise_posterior_variance_dZbar,

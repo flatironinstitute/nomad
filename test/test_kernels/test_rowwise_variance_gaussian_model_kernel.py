@@ -4,16 +4,17 @@ from unittest.mock import Mock, patch
 from pytest import LogCaptureFixture
 import pytest
 
-from lzcompression.kernels import (
+from fi_nomad.kernels import (
     RowwiseVarianceGaussianModelKernel,
 )
-from lzcompression.types import (
+from fi_nomad.types import (
     KernelInputType,
     RowwiseVarianceGaussianModelKernelReturnType,
     SVDStrategy,
 )
 
 Fixture = Tuple[KernelInputType, RowwiseVarianceGaussianModelKernel]
+PKG = "fi_nomad.kernels.rowwise_variance_gauss_model"
 
 
 @pytest.fixture
@@ -75,9 +76,7 @@ def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_full_iterati
     assert "Likelihood decreased," in caplog.text
 
 
-@patch(
-    "lzcompression.kernels.rowwise_variance_gauss_model.target_matrix_log_likelihood"
-)
+@patch(f"{PKG}.target_matrix_log_likelihood")
 def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_half_iteration(
     mock_likelihood: Mock, caplog: LogCaptureFixture, fixture: Fixture
 ) -> None:
@@ -89,11 +88,9 @@ def test_rowwise_variance_gauss_model_warns_on_decreased_likelihood_half_iterati
 
 # This is a pretty vague test: we just want to make sure that scaling is applied appropriately during
 # the means-matrix update process, as there was a bug in development where we left that out
-@patch("lzcompression.kernels.rowwise_variance_gauss_model.scale_by_rowwise_stddev")
-@patch("lzcompression.kernels.rowwise_variance_gauss_model.find_low_rank")
-@patch(
-    "lzcompression.kernels.rowwise_variance_gauss_model.get_stddev_normalized_matrix_gamma"
-)
+@patch(f"{PKG}.scale_by_rowwise_stddev")
+@patch(f"{PKG}.find_low_rank")
+@patch(f"{PKG}.get_stddev_normalized_matrix_gamma")
 def test_rowwise_variance_means_update(
     mock_gamma: Mock, mock_lowrank: Mock, mock_scale: Mock, fixture: Fixture
 ) -> None:
@@ -121,20 +118,14 @@ def test_rowwise_variance_means_update(
 
 # Again, this is mostly a sanity check that we didn't somehow skip something.
 # Ought to either delete or come up with more meaningful assertions.
-@patch("lzcompression.kernels.rowwise_variance_gauss_model.compute_loss")
-@patch("lzcompression.kernels.rowwise_variance_gauss_model.scale_by_rowwise_stddev")
-@patch("lzcompression.kernels.rowwise_variance_gauss_model.find_low_rank")
-@patch(
-    "lzcompression.kernels.rowwise_variance_gauss_model.target_matrix_log_likelihood"
-)
-@patch(
-    "lzcompression.kernels.rowwise_variance_gauss_model.get_stddev_normalized_matrix_gamma"
-)
-@patch("lzcompression.kernels.rowwise_variance_gauss_model.estimate_new_model_variance")
-@patch(
-    "lzcompression.kernels.rowwise_variance_gauss_model.get_elementwise_posterior_variance_dZbar"
-)
-@patch("lzcompression.kernels.rowwise_variance_gauss_model.get_posterior_means_Z")
+@patch(f"{PKG}.compute_loss")
+@patch(f"{PKG}.scale_by_rowwise_stddev")
+@patch(f"{PKG}.find_low_rank")
+@patch(f"{PKG}.target_matrix_log_likelihood")
+@patch(f"{PKG}.get_stddev_normalized_matrix_gamma")
+@patch(f"{PKG}.estimate_new_model_variance")
+@patch(f"{PKG}.get_elementwise_posterior_variance_dZbar")
+@patch(f"{PKG}.get_posterior_means_Z")
 def test_rowwise_variance_step_calls(
     mock_get_postmeans: Mock,
     mock_get_postvar: Mock,

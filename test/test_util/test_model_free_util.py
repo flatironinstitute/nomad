@@ -1,6 +1,6 @@
 import numpy as np
 
-from lzcompression.util.base_model_free_util import (
+from fi_nomad.util.base_model_free_util import (
     construct_utility,
 )
 

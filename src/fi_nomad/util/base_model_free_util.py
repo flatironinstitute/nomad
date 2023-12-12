@@ -1,5 +1,5 @@
 import numpy as np
-from lzcompression.types import FloatArrayType
+from fi_nomad.types import FloatArrayType
 
 
 def construct_utility(

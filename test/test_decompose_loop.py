@@ -2,16 +2,16 @@ from typing import cast
 import numpy as np
 from unittest.mock import Mock, patch
 from pytest import raises, LogCaptureFixture
-from lzcompression.kernels import KernelBase
+from fi_nomad.kernels import KernelBase
 
-from lzcompression.decompose import (
+from fi_nomad.decompose import (
     compute_max_iterations,
     decompose,
     initialize_candidate,
     instantiate_kernel,
 )
 
-from lzcompression.types import (
+from fi_nomad.types import (
     BaseModelFreeKernelReturnType,
     FloatArrayType,
     InitializationStrategy,
@@ -22,6 +22,7 @@ from lzcompression.types import (
 )
 
 TEST_KERNEL_TOLERANCE_ITERATIONS: int = 5
+PKG = "fi_nomad.decompose"
 
 
 class TestKernel(KernelBase):
@@ -51,8 +52,8 @@ def test_instantiate_kernel_throws_on_unsupported_kernel() -> None:
         _ = instantiate_kernel(KernelStrategy.TEST, mock_data_in)
 
 
-@patch("lzcompression.decompose.SingleVarianceGaussianModelKernel", autospec=True)
-@patch("lzcompression.decompose.BaseModelFree", autospec=True)
+@patch(f"{PKG}.SingleVarianceGaussianModelKernel", autospec=True)
+@patch(f"{PKG}.BaseModelFree", autospec=True)
 def test_instantiate_kernel_honors_strategy_selection(
     mock_base: Mock, mock_svgauss: Mock
 ) -> None:
@@ -64,7 +65,7 @@ def test_instantiate_kernel_honors_strategy_selection(
 
 
 ## low-rank candidate initialization
-@patch("lzcompression.decompose.initialize_low_rank_candidate")
+@patch(f"{PKG}.initialize_low_rank_candidate")
 def test_initialize_candidate_honors_initialization_strategy(mock_init: Mock) -> None:
     mock_x = np.array([[0, 2], [2, 0]])
     mock_checkpoint = np.eye(2)
@@ -92,7 +93,7 @@ def test_initialize_candidate_honors_initialization_strategy(mock_init: Mock) ->
     )
 
 
-@patch("lzcompression.decompose.initialize_low_rank_candidate")
+@patch(f"{PKG}.initialize_low_rank_candidate")
 def test_initialize_candidate_forces_copy_strategy_for_base_model_free(
     mock_init: Mock,
 ) -> None:
@@ -118,7 +119,7 @@ def test_initialize_candidate_forces_copy_strategy_for_base_model_free(
     mock_init.assert_called_once_with(mock_x, InitializationStrategy.COPY)
 
 
-@patch("lzcompression.decompose.initialize_low_rank_candidate")
+@patch(f"{PKG}.initialize_low_rank_candidate")
 def test_initialize_candidate_defaults_to_copy_on_null_checkpoint(
     mock_init: Mock,
 ) -> None:
@@ -165,7 +166,7 @@ def test_decompose_throws_if_input_has_negative_elements() -> None:
         _ = decompose(bad_matrix, 4, kernel_strategy=KernelStrategy.BASE_MODEL_FREE)
 
 
-@patch("lzcompression.decompose.instantiate_kernel")
+@patch(f"{PKG}.instantiate_kernel")
 def test_decompose_obeys_max_iterations(mock_get_kernel: Mock) -> None:
     target_rank = 5
     max_iterations = 10
@@ -210,7 +211,7 @@ def test_decompose_obeys_max_iterations(mock_get_kernel: Mock) -> None:
     )
 
 
-@patch("lzcompression.decompose.instantiate_kernel")
+@patch(f"{PKG}.instantiate_kernel")
 def test_decompose_stops_when_error_within_tolerance(mock_get_kernel: Mock) -> None:
     tolerance = 5
     target_rank = 5
