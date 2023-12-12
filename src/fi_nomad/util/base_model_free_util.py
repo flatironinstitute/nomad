@@ -1,3 +1,6 @@
+"""Utility functions for base model-free kernels. Most likely will not be expanded, even as other
+naive kernels are added.
+"""
 import numpy as np
 from fi_nomad.types import FloatArrayType
 

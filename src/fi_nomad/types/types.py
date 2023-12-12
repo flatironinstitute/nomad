@@ -1,3 +1,4 @@
+"""Defines most generally-visible types."""
 from typing import NamedTuple, Union
 import numpy as np
 import numpy.typing as npt
@@ -8,6 +9,8 @@ FloatArrayType = npt.NDArray[np.float_]
 
 # Currently unused--may be more trouble than it's worth
 class DecomposeInput(NamedTuple):
+    """Data object for input to the main decompose loop. Currently unused."""
+
     sparse_matrix_X: FloatArrayType
     target_rank: int
     kernel_strategy: KernelStrategy

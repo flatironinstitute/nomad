@@ -1,7 +1,10 @@
+"""Defines enumerations for fixed-choice configuration values."""
 from enum import Enum
 
 
 class InitializationStrategy(Enum):
+    """Strategy to use for choosing the initial value of the low-rank candidate."""
+
     COPY = 1
     BROADCAST_MEAN = 2
     ROWWISE_MEAN = 3
@@ -9,17 +12,25 @@ class InitializationStrategy(Enum):
 
 
 class SVDStrategy(Enum):
+    """Algorithms to use for SVD within kernels."""
+
     FULL = 1
     RANDOM_TRUNCATED = 2
     EXACT_TRUNCATED = 3
 
 
 class LossType(Enum):
+    """Known loss types for loss evaluation."""
+
     FROBENIUS = 1
     SQUARED_DIFFERENCE = 2
 
 
 class KernelStrategy(Enum):
+    """All currently-implemented decomposition kernels which can be instantiated
+    in the main runner loop.
+    """
+
     TEST = 1
     BASE_MODEL_FREE = 2
     GAUSSIAN_MODEL_SINGLE_VARIANCE = 3

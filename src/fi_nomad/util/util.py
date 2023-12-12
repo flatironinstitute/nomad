@@ -1,7 +1,8 @@
+"""Utility functions used across the library. Will likely be further subdivided."""
+from typing import cast, Union
 import numpy as np
 from sklearn.decomposition import TruncatedSVD  # type: ignore
 from scipy.stats import norm as normal  # type: ignore
-from typing import cast, Union
 
 from fi_nomad.types import (
     FloatArrayType,
@@ -110,7 +111,7 @@ def _frobenius_norm_loss(utility: FloatArrayType, candidate: FloatArrayType) -> 
 def compute_loss(
     utility: FloatArrayType,
     candidate: FloatArrayType,
-    type: LossType = LossType.FROBENIUS,
+    losstype: LossType = LossType.FROBENIUS,
 ) -> float:
     """Compute a scalar estimate of a loss between the utility matrix (Z) and
     target matrix L.
@@ -128,7 +129,7 @@ def compute_loss(
     Args:
         utility: "Z" matrix
         candidate: "L" matrix
-        type: Type of loss to use. Defaults to LossType.FROBENIUS.
+        losstype: Type of loss to use. Defaults to LossType.FROBENIUS.
 
     Raises:
         ValueError: If an unsupported loss type is requested.
@@ -137,11 +138,11 @@ def compute_loss(
         Scalar loss value representing how well L approximates Z (and,
         by proxy, X).
     """
-    if type == LossType.FROBENIUS:
+    if losstype == LossType.FROBENIUS:
         return _frobenius_norm_loss(utility, candidate)
-    if type == LossType.SQUARED_DIFFERENCE:
+    if losstype == LossType.SQUARED_DIFFERENCE:
         return _squared_difference_loss(utility, candidate)
-    raise ValueError(f"Unrecognized loss type {type} requested.")
+    raise ValueError(f"Unrecognized loss type {losstype} requested.")
 
 
 ##### Matrix decomposition (SVD) #####
@@ -163,21 +164,21 @@ def _find_low_rank_full(
     Returns:
         The low_rank matrix (by reference, even though it is modified in-place).
     """
-    (U, S, Vh) = np.linalg.svd(utility_matrix)
+    (svd_U, svd_S, svd_V) = np.linalg.svd(utility_matrix)
     # SVD yields U, Sigma, and V-Transpose, with U, V orthogonal
     # and Sigma positive diagonal, with entries in descending order.
     # The S from this svd implementation, however, is just a 1-d vector
     # with the diagonal's values, so we'll need to manipulate it a bit.
 
     # enforce rank r by zeroing out everything in S past the first r entries
-    S[(target_rank + 1) :] = 0
+    svd_S[(target_rank + 1) :] = 0
 
     # Project that vector onto a full appropriately-sized matrix
-    Sigma = np.zeros((U.shape[0], Vh.shape[1]))
-    np.fill_diagonal(Sigma, S)
+    new_Sigma = np.zeros((svd_U.shape[0], svd_V.shape[1]))
+    np.fill_diagonal(new_Sigma, svd_S)
 
     # and compute the new low-rank matrix candidate by regular matrix multiplication
-    np.matmul(U, Sigma @ Vh, out=low_rank, casting="unsafe")
+    np.matmul(svd_U, new_Sigma @ svd_V, out=low_rank, casting="unsafe")
     return low_rank
 
 

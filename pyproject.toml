@@ -65,3 +65,12 @@ strict_equality = true
 exclude = [
     'conftest.py'
 ]
+
+[tool.pylint."MESSAGES CONTROL"]
+good-names-rgxs = "[a-z_1234567890]+[A-Z]?"
+ignore = "__init__.py"
+disable = """
+    too-many-arguments,
+    too-many-locals,
+    logging-fstring-interpolation
+"""

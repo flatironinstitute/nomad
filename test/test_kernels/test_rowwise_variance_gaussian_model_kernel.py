@@ -102,7 +102,7 @@ def test_rowwise_variance_means_update(
     (_, kernel) = fixture
     mock_gamma.reset_mock()
     mock_gamma.return_value = np.eye(3)
-    kernel.do_means_update(post_means)
+    kernel.make_updated_means_estimate(post_means)
 
     mock_gamma.assert_called_once_with(post_means, kernel.model_variance_sigma_squared)
     mock_lowrank.assert_called_once_with(

@@ -58,7 +58,7 @@ def test_broadcast_rowwise_variance_with_scalar_filter(
     var = np.var(matrix, axis=1)
     filter = matrix != 0
     result = cast(
-        FloatArrayType, broadcast_rowwise_variance(var, matrix, filter=filter)
+        FloatArrayType, broadcast_rowwise_variance(var, matrix, limiter=filter)
     )
     assert result.shape == matrix[filter].shape
 

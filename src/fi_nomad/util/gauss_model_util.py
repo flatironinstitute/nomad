@@ -1,6 +1,10 @@
+"""Utility functions for Gaussian-model kernels. Heavy computation should go here in
+smaller functions (not in the classes themselves) to facilitate testing and incremental
+improvement.
+"""
+from typing import Union, cast, Any
 import numpy as np
 from scipy.stats import norm as normal  # type: ignore
-from typing import Union, cast, Any
 
 from fi_nomad.types.types import (
     FloatArrayType,
@@ -14,16 +18,33 @@ def broadcast_rowwise_variance(
     variance: Union[float, FloatArrayType],
     target: FloatArrayType,
     *,
-    filter: Any = None,
+    limiter: Any = None,
 ) -> Union[float, FloatArrayType]:
+    """Ensures consistent handling of scalar-variance and rowwise-variance stats functions
+    for Gaussian-model kernels.
+
+    When a single (scalar) variance is used, numpy will broadcast effectively; but when
+    a rowwise variance is used, the matrix layouts don't naturally match. This function
+    broadcasts the rowwise variance correctly, bringing it up to match the rank of the
+    matrix it's operating on, along with optionally filtering to certain elements.
+
+    Args:
+        variance: The variance to broadcast (scalar or rowwise)
+        target: The matrix to be modified by the resulting broadcast variance
+        limiter: If set, determines the subset of values of the broadcast variance
+            to return. Defaults to None.
+
+    Returns:
+        The variance, with all shape issues resolved.
+    """
     if np.isscalar(variance):
         return cast(float, variance)
     var = cast(FloatArrayType, variance)
     shape = target.shape
     bcast = np.repeat(var, shape[1]).reshape(shape)
-    if filter is None:
+    if limiter is None:
         return bcast
-    return cast(FloatArrayType, bcast[filter])
+    return cast(FloatArrayType, bcast[limiter])
 
 
 def get_posterior_means_Z(
@@ -61,12 +82,12 @@ def get_posterior_means_Z(
     #### Z-bar_ij = L_ij - sigma * psi(gamma) if S = 0.
     posterior_matrix = np.copy(sparse_matrix)
     sigma: Union[float, FloatArrayType] = np.sqrt(variance_sigma_sq)
-    filter = sparse_matrix == 0
-    sigma = broadcast_rowwise_variance(sigma, sparse_matrix, filter=filter)
+    element_filter = sparse_matrix == 0
+    sigma = broadcast_rowwise_variance(sigma, sparse_matrix, limiter=element_filter)
     # fmt: off
-    posterior_matrix[filter] = \
-        prior_means_L[filter] - \
-        sigma * pdf_to_cdf_ratio_psi(-1 * stddev_normalized_lowrank[filter])
+    posterior_matrix[element_filter] = \
+        prior_means_L[element_filter] - \
+        sigma * pdf_to_cdf_ratio_psi(-1 * stddev_normalized_lowrank[element_filter])
     # fmt: on
 
     return posterior_matrix
@@ -191,7 +212,7 @@ def get_elementwise_posterior_variance_dZbar(
     # Cache the pdf-to-cdf ratio for entries corresponding to
     # sparse_matrix's zero values
     zero_indices = sparse_matrix == 0
-    var = broadcast_rowwise_variance(model_variance, dZbar, filter=zero_indices)
+    var = broadcast_rowwise_variance(model_variance, dZbar, limiter=zero_indices)
     psi_of_neg_gamma = pdf_to_cdf_ratio_psi(-1 * stddevnorm_matrix_gamma[zero_indices])
     # And now populate those entries per the formula
     dZbar[zero_indices] = (
@@ -249,12 +270,12 @@ def target_matrix_log_likelihood(
     zero_indices = sparse_matrix == 0
     nonzero_indices = np.invert(zero_indices)
     scale: Union[float, FloatArrayType] = np.sqrt(variance_sigma_sq)
-    scale = broadcast_rowwise_variance(scale, sparse_matrix, filter=nonzero_indices)
+    scale = broadcast_rowwise_variance(scale, sparse_matrix, limiter=nonzero_indices)
     # The following at least avoids *explicitly* creating & populating an empty matrix
     # just to sum over it
-    sum = 0.0
-    sum += np.sum(normal.logcdf(-1 * stddev_norm_lr_gamma[zero_indices]))
-    sum += np.sum(
+    total = 0.0
+    total += np.sum(normal.logcdf(-1 * stddev_norm_lr_gamma[zero_indices]))
+    total += np.sum(
         normal.logpdf(
             sparse_matrix[nonzero_indices],
             loc=prior_means_L[nonzero_indices],
@@ -262,4 +283,4 @@ def target_matrix_log_likelihood(
         )
     )
 
-    return float(sum)
+    return float(total)
