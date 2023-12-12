@@ -1,5 +1,10 @@
 """Abstract base class defining the interface which all solution kernels
-should follow."""
+should follow.
+
+Classes:
+    KernelBase: Abstract base class for kernel classes.
+
+"""
 from abc import ABC, abstractmethod
 from typing import Union
 

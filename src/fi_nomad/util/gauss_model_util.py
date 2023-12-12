@@ -1,6 +1,16 @@
 """Utility functions for Gaussian-model kernels. Heavy computation should go here in
 smaller functions (not in the classes themselves) to facilitate testing and incremental
 improvement.
+
+Functions:
+    broadcast_rowwise_variance: Ensure variance shape conforms for matrix operations.
+    get_posterior_means_Z: Compute posterior means of Gaussian model.
+    estimate_new_model_variance: Compute updated variance estimate for truncated Gaussian.
+    get_stddev_normalized_matrix_gamma: Returns means, scaled to standard deviation.
+    scale_by_rowwise_stddev: Inverts standard-deviation normalization.
+    get_elementwise_posterior_variance_dZbar: Computes (elementwise) posterior variance.
+    target_matrix_log_likelihood: Finds log likelihood of target matrix with current parameters.
+
 """
 from typing import Union, cast, Any
 import numpy as np

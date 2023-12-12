@@ -1,4 +1,12 @@
-"""Utility functions used across the library. Will likely be further subdivided."""
+"""Utility functions used across the library. Will likely be further subdivided.
+
+Functions:
+    initialize_low_rank_candidate: Apply strategy to determine initial low-rank candidate matrix.
+    pdf_to_cdf_ratio_psi: Computes PDF/CDF for a (0, 1) Gaussian.
+    compute_loss: Computes scalar loss estimate between utility and target matrices.
+    find_low_rank: Compute low-rank approximation to input matrix using stated SVD strategy.
+
+"""
 from typing import cast, Union
 import numpy as np
 from sklearn.decomposition import TruncatedSVD  # type: ignore

@@ -1,4 +1,9 @@
-"""Defines a variation of the Gaussian-model algorithm from Saul (2022) with per-row variance."""
+"""Defines a variation of the Gaussian-model algorithm from Saul (2022) with per-row variance.
+
+Classes:
+    RowwiseVarianceGaussianModelKernel: Gaussian-model kernel with per-row variance.
+
+"""
 from typing import Tuple, cast
 import logging
 import numpy as np

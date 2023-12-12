@@ -1,5 +1,10 @@
 """Defines types for objects passed to kernels in instantiation. Kernel-specific parameter
-sets will also be included here."""
+sets will also be included here.
+
+Classes:
+    KernelInputType: Standard data object for initializing kernels.
+
+"""
 from typing import NamedTuple, Union
 from .types import FloatArrayType
 from .enums import SVDStrategy

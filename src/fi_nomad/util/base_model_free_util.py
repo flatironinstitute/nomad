@@ -1,5 +1,9 @@
 """Utility functions for base model-free kernels. Most likely will not be expanded, even as other
 naive kernels are added.
+
+Functions:
+    construct_utility: Construct candidate by enforcing base matrix constraints on an SVD result.
+
 """
 import numpy as np
 from fi_nomad.types import FloatArrayType

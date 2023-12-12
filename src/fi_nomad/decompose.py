@@ -1,5 +1,10 @@
 """Defines the main decompose loop for all nonlinear matrix decomposition algorithms,
-and corresponding initialization and factory functions."""
+and corresponding initialization and factory functions.
+
+Functions:
+    decompose: Main library entry point. Iteratively applies selected algorithm.
+
+"""
 
 from typing import Optional, Union
 import time

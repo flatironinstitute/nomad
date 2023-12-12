@@ -1,4 +1,13 @@
-"""Defines an interface for data objects returned from decomposition kernels."""
+"""Defines an interface for data objects returned from decomposition kernels.
+
+Classes:
+    KernelReturnBase: Basic interface for kernel return values.
+    BaseModelFreeKernelReturnType: Return from base naive kernel method.
+    SingleVarianceGaussianModelKernelReturnType: Data with scalar variance.
+    RowwiseVarianceGaussianModelKernelReturnType: Data with rowwise variance.
+    KernelReturnType: Combination of data and summary string.
+
+"""
 from abc import ABC
 from typing import Union
 from dataclasses import dataclass

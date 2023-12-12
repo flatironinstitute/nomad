@@ -1,4 +1,9 @@
-"""Defines the Gaussian-model decomposition strategy from Saul (2022)."""
+"""Defines the Gaussian-model decomposition strategy from Saul (2022).
+
+Classes:
+    SingleVarianceGaussianModelKernel: Gaussian-model kernel with scalar variance.
+
+"""
 from typing import cast
 import logging
 import numpy as np

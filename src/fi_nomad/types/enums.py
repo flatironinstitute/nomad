@@ -1,4 +1,12 @@
-"""Defines enumerations for fixed-choice configuration values."""
+"""Defines enumerations for fixed-choice configuration values.
+
+Classes:
+    InitializationStrategy: Algorithm choice for setting the initial low-rank candidate.
+    SVDStrategy: Algorithm choice for executing SVD within kernels.
+    LossType: Types of loss.
+    KernelStrategy: Choices of decomposition kernel.
+
+"""
 from enum import Enum
 
 
