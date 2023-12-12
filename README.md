@@ -7,17 +7,18 @@ In the problem setting, given a sparse nonnegative matrix **X**, we would like t
 target rank *r*. Applying a
 [ReLU nonlinearity](https://en.wikipedia.org/wiki/Rectifier_(neural_networks)) to **L** allows lossless recovery of **X**.
 
-Two methods of estimating the low-rank representation **L** are currently offered:
+Three methods of estimating the low-rank representation **L** are currently offered:
  - a model-free method, which returns only the low-rank approximation
  - a method which returns the means-and-variance parameters (**L**, *v*) of a Gaussian model, as described in Saul (2022)
+ - an extension of the Gaussian-model method which uses a different variance parameter per row
 
-Both methods operate in an iterative fashion; the latter is particularly analogous to expectation-maximization.
+All methods operate in an iterative fashion; the model-based methods are particularly analogous to expectation-maximization,
+in that they iteratively refine a model's parameters and recompute the posterior probability under the new parameters.
 
-MORE DESCRIPTION TK
 
 ## Getting Started
 
-The library is currently accessed through Python calls (interactive REPL, scripts, or probably Jupyter, although the latter has not been tested).
+The library is accessed through Python calls (interactive REPL and scripts have been tested; Jupyter has not, but should work).
 
 - Ensure that you have a package environment in your environment manager of choice (e.g. [Conda](https://conda.io/projects/conda/en/latest/index.html),
 [venv](https://docs.python.org/3/library/venv.html))

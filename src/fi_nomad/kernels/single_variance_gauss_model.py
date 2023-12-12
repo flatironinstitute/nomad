@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class SingleVarianceGaussianModelKernel(KernelBase):
-    """Estimator for a Gaussian mdel (L, v) for a sparse nonnegative matrix X with shared variance across all entries.
+    """Estimator for a Gaussian model (L, v) for a sparse nonnegative matrix X with shared variance across all entries.
 
     The algorithm uses an expectation-maximization strategy to learn the parameters of a
     Gaussian model with means L and universal variance v that maximizes the likelihood of the data X.
