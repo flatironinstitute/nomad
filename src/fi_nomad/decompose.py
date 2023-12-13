@@ -26,7 +26,7 @@ from fi_nomad.types import (
     KernelStrategy,
     SVDStrategy,
 )
-from fi_nomad.util.util import (
+from fi_nomad.util import (
     initialize_low_rank_candidate,
 )
 
