@@ -16,7 +16,7 @@ from fi_nomad.types import (
     LossType,
     SingleVarianceGaussianModelKernelReturnType,
 )
-from fi_nomad.util.util import (
+from fi_nomad.util import (
     compute_loss,
     find_low_rank,
 )

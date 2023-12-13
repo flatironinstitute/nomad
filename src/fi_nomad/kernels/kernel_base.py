@@ -50,9 +50,8 @@ class KernelBase(ABC):
     # The following lines are unreachable except through shenanigans
     # (the class can't even be insantiated for test without serious hacks)
     # so exclude from report
-    # LCOV_EXCL_START
     @abstractmethod
-    def step(self) -> None:
+    def step(self) -> None: # pragma: no cover
         """Base method to execute one step of the kernel-defined algorithm.
 
         Raises:
@@ -61,7 +60,7 @@ class KernelBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def running_report(self) -> str:
+    def running_report(self) -> str: # pragma: no cover
         """Base method to return a string report on a per-step basis.
 
         Raises:
@@ -73,7 +72,7 @@ class KernelBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def report(self) -> KernelReturnType:
+    def report(self) -> KernelReturnType: # pragma: no cover
         """Base mtehod to return decomposition results and a summary.
 
         Raises:
@@ -83,5 +82,3 @@ class KernelBase(ABC):
             Object containing decomposition result and summary description.
         """
         raise NotImplementedError
-
-    # LCOV_EXCL_STOP

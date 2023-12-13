@@ -19,7 +19,7 @@ from scipy.stats import norm as normal  # type: ignore
 from fi_nomad.types.types import (
     FloatArrayType,
 )
-from fi_nomad.util.util import (
+from fi_nomad.util import (
     pdf_to_cdf_ratio_psi,
 )
 
