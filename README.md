@@ -1,4 +1,4 @@
-[![codecov][https://codecov.io/github/flatironinstitute/nomad/graph/badge.svg]](https://codecov.io/github/flatironinstitute/ccn-template)
+[![codecov][https://codecov.io/github/flatironinstitute/nomad/graph/badge.svg]](https://codecov.io/github/flatironinstitute/nomad)
 # Final library name TK
 
 This library implements methods to facilitate minimally lossy matrix decomposition for sparse nonnegative matrices, under the
