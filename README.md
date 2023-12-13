@@ -41,7 +41,7 @@ We'll publish to `pypi` once we're out of alpha and have picked a good name.
 Load the observed non-negative matrix `X` as a numpy array:
 
 ```python
-from fi_nomad.decompose import decompose
+from fi_nomad import decompose
 from fi_nomad.types import KernelStrategy
 import numpy as np
 import logging
@@ -82,7 +82,7 @@ print(relu_L)
 
 ### Additional Features
 
-The main entry point for the model-based low-rank matrix estimation is `fi_nomad.decompose.decompose`.
+The main entry point for the model-based low-rank matrix estimation is `fi_nomad.decompose`.
 Three parameters are required:
 - the sparse nonnegative matrix
 - the target rank

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from fi_nomad.decompose import decompose
+from fi_nomad import decompose
 from fi_nomad.types import KernelStrategy
 from fi_nomad.util import compute_loss
 

@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from pytest import raises, LogCaptureFixture
 from fi_nomad.kernels import KernelBase
 
-from fi_nomad.decompose import (
+from fi_nomad.entry import (
     compute_max_iterations,
     decompose,
     initialize_candidate,
@@ -22,7 +22,7 @@ from fi_nomad.types import (
 )
 
 TEST_KERNEL_TOLERANCE_ITERATIONS: int = 5
-PKG = "fi_nomad.decompose"
+PKG = "fi_nomad.entry"
 
 
 class TestKernel(KernelBase):
