@@ -42,7 +42,7 @@ test = [
 source = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "--cov --cov-report lcov -rs"
+addopts = "--cov --cov-report xml --cov-report term-missing -rs"
 
 [tool.mypy]
 python_version = "3.8"
