@@ -58,8 +58,9 @@ def test_rowwise_variance_gauss_model_final_report(fixture: Fixture) -> None:
     assert "0 total iterations" in result.summary
     assert "final loss" in result.summary
     assert "likelihood" in result.summary
-    np.testing.assert_array_equal(
-        result.data.reconstruction, indata.low_rank_candidate_L
+    np.testing.assert_allclose(
+        indata.low_rank_candidate_L,
+        result.data.factors[0] @ result.data.factors[1],
     )
     result_data = cast(RowwiseVarianceGaussianModelKernelReturnType, result.data)
     np.testing.assert_array_equal(

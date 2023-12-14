@@ -9,24 +9,20 @@ Classes:
 
 """
 from abc import ABC
-from typing import Union
+from typing import Tuple, Union
 from dataclasses import dataclass
 from .types import FloatArrayType
 
-# This will facilitate a future conversion from returning the full
-# low-rank matrix to returning a factored version.
-SolutionType = FloatArrayType
+SolutionType = Tuple[FloatArrayType, FloatArrayType]
 
 
 @dataclass
 class KernelReturnBase(ABC):
     """Base interface for returned kernel data. Enforces that every kernel
-    must return a "reconstruction" member with its solution.
-    This facilitates usability and a smoother transition to returning the
-    decomposed version of the low-rank estimation matrix.
+    must return consistent member(s) containing the reconstructed solution.
     """
 
-    reconstruction: SolutionType
+    factors: SolutionType
 
 
 @dataclass

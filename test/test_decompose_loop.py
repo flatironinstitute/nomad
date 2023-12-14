@@ -21,6 +21,8 @@ from fi_nomad.types import (
     SVDStrategy,
 )
 
+from fi_nomad.util import two_part_factor
+
 TEST_KERNEL_TOLERANCE_ITERATIONS: int = 5
 PKG = "fi_nomad.entry"
 
@@ -41,7 +43,8 @@ class TestKernel(KernelBase):
 
     def report(self) -> KernelReturnType:
         return KernelReturnType(
-            "Complete", BaseModelFreeKernelReturnType(self.sparse_matrix_X)
+            "Complete",
+            BaseModelFreeKernelReturnType(two_part_factor(self.sparse_matrix_X)),
         )
 
 
@@ -218,9 +221,7 @@ def test_decompose_obeys_max_iterations(mock_get_kernel: Mock) -> None:
     assert passed_input.tolerance is None
 
     assert mock_kernel.elapsed_iterations == max_iterations
-    np.testing.assert_array_equal(
-        sparse_matrix, cast(FloatArrayType, result.reconstruction)
-    )
+    np.testing.assert_allclose(sparse_matrix, result.factors[0] @ result.factors[1])
 
 
 @patch(f"{PKG}.instantiate_kernel")

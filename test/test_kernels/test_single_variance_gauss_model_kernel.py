@@ -61,8 +61,9 @@ def test_single_variance_gauss_model_final_report(fixture: Fixture) -> None:
     assert "final loss" in result.summary
     assert "likelihood" in result.summary
     result_data = cast(SingleVarianceGaussianModelKernelReturnType, result.data)
-    np.testing.assert_array_equal(
-        result_data.reconstruction, indata.low_rank_candidate_L
+    np.testing.assert_allclose(
+        indata.low_rank_candidate_L,
+        result_data.factors[0] @ result_data.factors[1],
     )
     assert result_data.variance == float(np.var(indata.sparse_matrix_X))
 

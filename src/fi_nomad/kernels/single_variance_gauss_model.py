@@ -16,10 +16,7 @@ from fi_nomad.types import (
     LossType,
     SingleVarianceGaussianModelKernelReturnType,
 )
-from fi_nomad.util import (
-    compute_loss,
-    find_low_rank,
-)
+from fi_nomad.util import compute_loss, find_low_rank, two_part_factor
 from fi_nomad.util.gauss_model_util import (
     get_stddev_normalized_matrix_gamma,
     get_posterior_means_Z,
@@ -128,7 +125,7 @@ class SingleVarianceGaussianModelKernel(KernelBase):
             + f"{self.loss} likelihood {self.likelihood}"
         )
         data = SingleVarianceGaussianModelKernelReturnType(
-            self.model_means_L,
+            two_part_factor(self.model_means_L),
             self.model_variance_sigma_squared,
         )
         return KernelReturnType(text, data)

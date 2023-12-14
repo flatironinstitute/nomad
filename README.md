@@ -65,7 +65,7 @@ result_data = decompose(
     kernel_strategy=KernelStrategy.GAUSSIAN_MODEL_SINGLE_VARIANCE,
     verbose=True
 )
-model_means_L = result_data.reconstruction
+model_means_L = result_data.factors[0] @ result_data.factors[1]
 model_variance = result_data.variance
 
 # use model_means_L as appropriate for your application
