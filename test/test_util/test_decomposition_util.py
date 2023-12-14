@@ -12,6 +12,7 @@ from fi_nomad.util.decomposition_util import (
     _find_low_rank_random_truncated,
     _find_low_rank_exact_truncated,
     find_low_rank,
+    two_part_factor,
 )
 
 PKG = "fi_nomad.util.decomposition_util"
@@ -64,7 +65,7 @@ def test_svd_fns_recover_known_result(svdfn: SVDFnType) -> None:
     ])
     # fmt: on
     result = svdfn(low_rank_input, 1)
-    np.testing.assert_array_almost_equal(low_rank_input, result)
+    np.testing.assert_allclose(low_rank_input, result)
 
 
 # Note: "Exact Truncated" method omitted for this
@@ -82,7 +83,7 @@ def test_svd_fns_recover_full_rank_input_when_allowed_full_rank(
     ])
     # fmt: on
     returned_val = svdfn(base_matrix, max(base_matrix.shape))
-    np.testing.assert_array_almost_equal(base_matrix, returned_val)
+    np.testing.assert_allclose(base_matrix, returned_val)
 
 
 @patch(f"{PKG}._find_low_rank_random_truncated")
@@ -110,3 +111,18 @@ def test_find_low_rank_throws_on_unknown_strategy() -> None:
     util = np.ones((3, 2))
     with raises(ValueError, match="Unsupported"):
         _ = find_low_rank(util, 2, util, cast(SVDStrategy, -5))
+
+
+def test_two_part_factor() -> None:
+    # fmt: off
+    rank_two = np.array([
+        [ 1.,  0.1,  2.,  -0.3],
+        [ 5., -1.,  10.,   3. ],
+        [ 7.,  1.,  14.,  -3. ],
+        [ 9.,  2.,  18.,  -6. ]
+    ])
+    # fmt: on
+    (A, B) = two_part_factor(rank_two)
+    np.testing.assert_allclose(rank_two, A @ B)
+    assert A.shape == (4, 2)
+    assert B.shape == (2, 4)

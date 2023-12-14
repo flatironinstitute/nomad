@@ -125,7 +125,7 @@ def test_estimate_new_model_rowwise_variance() -> None:
     result = estimate_new_model_variance(
         posterior_means, prior_means, var, rowwise=True
     )
-    np.testing.assert_array_almost_equal(expected, result)
+    np.testing.assert_allclose(expected, result)
 
 
 def test_get_stddev_normalized_matrix_gamma_scalar_variance() -> None:

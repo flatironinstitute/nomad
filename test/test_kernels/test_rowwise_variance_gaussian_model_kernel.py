@@ -61,6 +61,10 @@ def test_rowwise_variance_gauss_model_final_report(fixture: Fixture) -> None:
     np.testing.assert_array_equal(
         result.data.reconstruction, indata.low_rank_candidate_L
     )
+    np.testing.assert_allclose(
+        indata.low_rank_candidate_L,
+        result.data.factored_solution[0] @ result.data.factored_solution[1],
+    )
     result_data = cast(RowwiseVarianceGaussianModelKernelReturnType, result.data)
     np.testing.assert_array_equal(
         result_data.variance, np.var(indata.sparse_matrix_X, axis=1)

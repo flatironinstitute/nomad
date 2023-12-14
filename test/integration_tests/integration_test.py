@@ -62,6 +62,8 @@ def test_random_matrix_recovery(kernel: KernelStrategy) -> None:
     low_rank_relu[low_rank_relu < 0] = 0
     sparse_loss = compute_loss(low_rank_relu, random_matrix_sparse)
     assert sparse_loss < random_matrix_tolerance
+    lowrank_factored = result.factored_solution[0] @ result.factored_solution[1]
+    np.testing.assert_allclose(lowrank_factored, low_rank)
 
 
 @pytest.mark.parametrize("kernel", all_kernels)
@@ -73,3 +75,5 @@ def test_model_kernel_elevens_matrix_recovery(kernel: KernelStrategy) -> None:
         assert np.allclose(relu_l, eleven_matrix, atol=BASE_MODEL_FREE_ELEVENS_ATOL)
     else:
         assert np.allclose(relu_l, eleven_matrix)
+    lowrank_factored = result.factored_solution[0] @ result.factored_solution[1]
+    np.testing.assert_allclose(lowrank_factored, result.reconstruction)

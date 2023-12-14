@@ -64,6 +64,10 @@ def test_single_variance_gauss_model_final_report(fixture: Fixture) -> None:
     np.testing.assert_array_equal(
         result_data.reconstruction, indata.low_rank_candidate_L
     )
+    np.testing.assert_allclose(
+        indata.low_rank_candidate_L,
+        result_data.factored_solution[0] @ result_data.factored_solution[1],
+    )
     assert result_data.variance == float(np.var(indata.sparse_matrix_X))
 
 

@@ -102,6 +102,13 @@ def test_base_model_free_kernel_final_report(fixture_no_tol: Fixture) -> None:
     np.testing.assert_array_equal(
         indata.low_rank_candidate_L, cast(FloatArrayType, result_1.data.reconstruction)
     )
+    np.testing.assert_allclose(
+        indata.low_rank_candidate_L,
+        cast(
+            FloatArrayType,
+            result_1.data.factored_solution[0] @ result_1.data.factored_solution[1],
+        ),
+    )
 
     kernel.loss = 3.0
     result_2 = kernel.report()

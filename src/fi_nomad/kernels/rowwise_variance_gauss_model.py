@@ -16,10 +16,7 @@ from fi_nomad.types import (
     KernelReturnType,
     LossType,
 )
-from fi_nomad.util import (
-    compute_loss,
-    find_low_rank,
-)
+from fi_nomad.util import compute_loss, find_low_rank, two_part_factor
 from fi_nomad.util.gauss_model_util import (
     get_stddev_normalized_matrix_gamma,
     get_posterior_means_Z,
@@ -203,6 +200,7 @@ class RowwiseVarianceGaussianModelKernel(KernelBase):
         )
         data = RowwiseVarianceGaussianModelKernelReturnType(
             self.model_means_L,
+            two_part_factor(self.model_means_L),
             self.model_variance_sigma_squared,
         )
         return KernelReturnType(text, data)
