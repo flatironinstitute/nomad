@@ -13,20 +13,16 @@ from typing import Tuple, Union
 from dataclasses import dataclass
 from .types import FloatArrayType
 
-# This will facilitate a future conversion from returning the full
-# low-rank matrix to returning a factored version.
-SolutionType_Unfactored = FloatArrayType
 SolutionType = Tuple[FloatArrayType, FloatArrayType]
 
 
 @dataclass
 class KernelReturnBase(ABC):
     """Base interface for returned kernel data. Enforces that every kernel
-    must return consistent members with the reconstructed solution.
+    must return consistent member(s) containing the reconstructed solution.
     """
 
-    reconstruction: SolutionType_Unfactored
-    factored_solution: SolutionType
+    factors: SolutionType
 
 
 @dataclass

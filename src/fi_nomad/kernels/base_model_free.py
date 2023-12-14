@@ -78,9 +78,7 @@ class BaseModelFree(KernelBase):
         """
         floss = str(self.loss) if self.loss != float("inf") else "Not Tracked"
         text = f"{self.elapsed_iterations} total, final loss {floss}"
-        data = BaseModelFreeKernelReturnType(
-            self.low_rank_candidate_L, two_part_factor(self.low_rank_candidate_L)
-        )
+        data = BaseModelFreeKernelReturnType(two_part_factor(self.low_rank_candidate_L))
         return KernelReturnType(text, data)
 
 

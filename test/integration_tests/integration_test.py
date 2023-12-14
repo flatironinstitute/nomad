@@ -57,23 +57,22 @@ def test_random_matrix_recovery(kernel: KernelStrategy) -> None:
         kernel,
         tolerance=random_matrix_tolerance,
     )
-    low_rank = result.reconstruction
+    low_rank = result.factors[0] @ result.factors[1]
     low_rank_relu = np.copy(low_rank)
     low_rank_relu[low_rank_relu < 0] = 0
     sparse_loss = compute_loss(low_rank_relu, random_matrix_sparse)
     assert sparse_loss < random_matrix_tolerance
-    lowrank_factored = result.factored_solution[0] @ result.factored_solution[1]
+    lowrank_factored = result.factors[0] @ result.factors[1]
     np.testing.assert_allclose(lowrank_factored, low_rank)
 
 
 @pytest.mark.parametrize("kernel", all_kernels)
 def test_model_kernel_elevens_matrix_recovery(kernel: KernelStrategy) -> None:
     result = decompose(eleven_matrix, eleven_matrix_target_rank, kernel)
-    relu_l = np.copy(result.reconstruction)
+    low_rank = result.factors[0] @ result.factors[1]
+    relu_l = np.copy(low_rank)
     relu_l[relu_l < 0] = 0
     if kernel == KernelStrategy.BASE_MODEL_FREE:
         assert np.allclose(relu_l, eleven_matrix, atol=BASE_MODEL_FREE_ELEVENS_ATOL)
     else:
         assert np.allclose(relu_l, eleven_matrix)
-    lowrank_factored = result.factored_solution[0] @ result.factored_solution[1]
-    np.testing.assert_allclose(lowrank_factored, result.reconstruction)

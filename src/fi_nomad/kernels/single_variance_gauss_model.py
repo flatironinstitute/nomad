@@ -125,7 +125,6 @@ class SingleVarianceGaussianModelKernel(KernelBase):
             + f"{self.loss} likelihood {self.likelihood}"
         )
         data = SingleVarianceGaussianModelKernelReturnType(
-            self.model_means_L,
             two_part_factor(self.model_means_L),
             self.model_variance_sigma_squared,
         )
