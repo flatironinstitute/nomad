@@ -4,6 +4,7 @@ from .decomposition_util import (
 )
 from .initialization_util import (
     initialize_low_rank_candidate as initialize_low_rank_candidate,
+    initialize_candidate as initialize_candidate,
 )
 from .loss_util import compute_loss as compute_loss
 from .stats_util import pdf_to_cdf_ratio_psi as pdf_to_cdf_ratio_psi

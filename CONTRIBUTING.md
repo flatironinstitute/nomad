@@ -225,7 +225,8 @@ the sets of kernels which might share them.
   (by SVD); `initialization_util.py` defines setup functionality used
   by the main loop; `loss_util.py` and `stats_util.py` define functions
   to compute loss values and deal with probability distributions,
-  respectively.
+  respectively. `factory_util.py` defines the factory function for
+  instantiating kernels.
   * New kernels will likely require adding one or more `XXX_util.py`
   files for the computation functions that are unique to their
   algorithms. Of course, if it's possible for a function to be shared
@@ -235,7 +236,7 @@ the sets of kernels which might share them.
   semantic labels for constant values, such as choices of kernel,
   SVD strategy, etc. New kernels will need to add to the
   `KernelStrategy` enum in this file, as well as modifying the
-  factory function in `entry.py`. Essentially, where code exposes a
+  factory function in `util.factory_util.py`. Essentially, where code exposes a
   choice from a number of discrete possibilities, those possibilities
   should be given a label as an enum.
   * `kernelInputTypes.py` and `kernelReturnTypes.py` define the

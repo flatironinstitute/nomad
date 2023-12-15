@@ -2,11 +2,17 @@
 
 Functions:
     initialize_low_rank_candidate: Apply strategy to determine initial low-rank candidate matrix.
+    initialize_candidate: Wrapper for initializing low-rank candidate with error handling.
 
 """
+from typing import Optional
 import numpy as np
 
-from fi_nomad.types import FloatArrayType, InitializationStrategy
+from fi_nomad.types import (
+    FloatArrayType,
+    InitializationStrategy,
+    KernelStrategy,
+)
 
 
 def initialize_low_rank_candidate(
@@ -43,3 +49,52 @@ def initialize_low_rank_candidate(
     else:
         raise ValueError("Unsupported initialization strategy.")
     return low_rank_candidate
+
+
+def initialize_candidate(
+    init_strat: InitializationStrategy,
+    k_strat: KernelStrategy,
+    sparse: FloatArrayType,
+    guess: Optional[FloatArrayType],
+) -> FloatArrayType:
+    """Initialization function for standard kernel inputs.
+
+    Args:
+        init_strat: Methodology for picking the initial decomposition candidate.
+        k_strat: The type of kernel used (as a "COPY" strategy is enforced for the naive
+            kernel)
+        sparse: The input sparse matrix
+        guess: An optional initial low-rank candidate, used for checkpointing when the
+        "KNOWN_MATRIX" strategy is being followed
+
+    Raises:
+        ValueError: Raised if the shape of the guess parameter does not match the
+            shape of the sparse input matrix
+
+    Returns:
+        An object of standard kernel inputs
+    """
+    # Note: enforcing "COPY" strategy for base_model_free kernel may not be desirable
+    _initialization_strategy = (
+        InitializationStrategy.COPY
+        if k_strat == KernelStrategy.BASE_MODEL_FREE
+        else init_strat
+    )
+    input_matrix = (
+        guess
+        if (
+            _initialization_strategy == InitializationStrategy.KNOWN_MATRIX
+            and guess is not None
+        )
+        else sparse
+    )
+    if (
+        guess is not None
+        and _initialization_strategy == InitializationStrategy.KNOWN_MATRIX
+    ):
+        if guess.shape != sparse.shape:
+            raise ValueError(
+                "A manual checkpoint matrix was submitted, but its shape"
+                + f"{guess.shape} does not match the sparse matrix's {sparse.shape}."
+            )
+    return initialize_low_rank_candidate(input_matrix, _initialization_strategy)
