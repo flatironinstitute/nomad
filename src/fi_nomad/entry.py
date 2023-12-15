@@ -1,5 +1,4 @@
-"""Defines the main decompose loop for all nonlinear matrix decomposition algorithms,
-and corresponding initialization and factory functions.
+"""Defines the main decompose loop for all nonlinear matrix decomposition algorithms.
 
 Functions:
     decompose: Main library entry point. Iteratively applies selected algorithm.
@@ -10,12 +9,6 @@ from typing import Optional, Union
 import time
 import logging
 import numpy as np
-from fi_nomad.kernels import (
-    KernelBase,
-    BaseModelFree,
-    RowwiseVarianceGaussianModelKernel,
-    SingleVarianceGaussianModelKernel,
-)
 
 from fi_nomad.types import (
     FloatArrayType,
@@ -26,92 +19,10 @@ from fi_nomad.types import (
     KernelStrategy,
     SVDStrategy,
 )
-from fi_nomad.util import (
-    initialize_low_rank_candidate,
-)
+from fi_nomad.util import initialize_candidate
+from fi_nomad.util.factory_util import instantiate_kernel
 
 logger = logging.getLogger(__name__)
-
-
-def instantiate_kernel(
-    s: KernelStrategy,
-    data_in: KernelInputType,
-    kernel_params: Optional[KernelSpecificParameters] = None,
-) -> KernelBase:
-    """Factory function to instantiate and configure a decomposition kernel.
-
-    Args:
-        s: The defined KernelStrategy to instantiate
-        data_in: Input data for the kernel
-        kernel_params: Optional kernel-specific parameters. Defaults to None.
-
-    Raises:
-        NotImplementedError: Raised if optional kernel parameters are passed.
-        ValueError: Raised if an unrecognized kernel type is requested.
-
-    Returns:
-        The instantiated decomposition kernel, conforming to the standard interface.
-    """
-    if kernel_params is not None:
-        raise NotImplementedError(
-            "No kernel is using these yet. Remove this note when implemented."
-        )
-    if s == KernelStrategy.BASE_MODEL_FREE:
-        return BaseModelFree(data_in)
-    if s == KernelStrategy.GAUSSIAN_MODEL_SINGLE_VARIANCE:
-        return SingleVarianceGaussianModelKernel(data_in)
-    if s == KernelStrategy.GAUSSIAN_MODEL_ROWWISE_VARIANCE:
-        return RowwiseVarianceGaussianModelKernel(data_in)
-    raise ValueError(f"Unsupported kernel strategy {s}")
-
-
-def initialize_candidate(
-    init_strat: InitializationStrategy,
-    k_strat: KernelStrategy,
-    sparse: FloatArrayType,
-    guess: Optional[FloatArrayType],
-) -> FloatArrayType:
-    """Initialization function for standard kernel inputs.
-
-    Args:
-        init_strat: Methodology for picking the initial decomposition candidate.
-        k_strat: The type of kernel used (as a "COPY" strategy is enforced for the naive
-            kernel)
-        sparse: The input sparse matrix
-        guess: An optional initial low-rank candidate, used for checkpointing when the
-        "KNOWN_MATRIX" strategy is being followed
-
-    Raises:
-        ValueError: Raised if the shape of the guess parameter does not match the
-            shape of the sparse input matrix
-
-    Returns:
-        An object of standard kernel inputs
-    """
-    # Note: enforcing "COPY" strategy for base_model_free kernel may not be desirable
-    _initialization_strategy = (
-        InitializationStrategy.COPY
-        if k_strat == KernelStrategy.BASE_MODEL_FREE
-        else init_strat
-    )
-    input_matrix = (
-        guess
-        if (
-            _initialization_strategy == InitializationStrategy.KNOWN_MATRIX
-            and guess is not None
-        )
-        else sparse
-    )
-    if (
-        guess is not None
-        and _initialization_strategy == InitializationStrategy.KNOWN_MATRIX
-    ):
-        if guess.shape != sparse.shape:
-            raise ValueError(
-                "A manual checkpoint matrix was submitted, but its shape"
-                + f"{guess.shape} does not match the sparse matrix's {sparse.shape}."
-            )
-    return initialize_low_rank_candidate(input_matrix, _initialization_strategy)
 
 
 def validate_sparse_matrix(sparse_matrix_X: FloatArrayType) -> None:
