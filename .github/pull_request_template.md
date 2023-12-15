@@ -13,6 +13,7 @@ or erroneous behavior)
 - [ ] New features (non-breaking change that adds functionality)
 - [ ] Breaking change (fix or feature that changes how existing
 functionality works, other than correcting errors)
+- [ ] Code improvement (no new functionality, but improving project structure)
 - [ ] Documentation only (changes that improve or expand instructions
 to users, without changing program behavior)
 
