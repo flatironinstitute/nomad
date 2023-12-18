@@ -117,6 +117,10 @@ difference between `X` and the current estimate) is below this value.
 - `manual_max_iterations`: If set, the algorithm will use this number as the maximum number of iterations
 (instead of running for 100 * target_rank iterations).
 - `verbose`: if set to `True` (and the caller's logging config allows it), will log a running record of estimation performance.
+- `diagnostic_config`: Optional. If set, it should contain a `DiagnosticDataConfig` data object including
+the level of per-iteration diagnostic information to record and the base path configuration for this
+output. This will only be useful when working with specific kernels that implement per-iteration
+diagnostic data output.
 
 Regardless of settings, the estimator will generate a warning if the iteration-over-iteration likelihood was observed
 to decrease during the course of estimation. (This is quite common due to numerics noise once a good estimate has been

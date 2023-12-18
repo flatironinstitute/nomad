@@ -1,12 +1,11 @@
+import logging
+from typing import Optional, Tuple, cast
 import numpy as np
 from unittest.mock import Mock, patch
-from pytest import raises, LogCaptureFixture
+from pytest import raises, LogCaptureFixture, fixture
 from fi_nomad.kernels import KernelBase
 
-from fi_nomad.entry import (
-    compute_max_iterations,
-    decompose,
-)
+from fi_nomad.entry import compute_max_iterations, decompose, do_final_report
 
 from fi_nomad.types import (
     BaseModelFreeKernelReturnType,
@@ -44,6 +43,35 @@ class TestKernel(KernelBase):
         )
 
 
+Fixture = Tuple[KernelInputType, TestKernel]
+
+
+def make_test_kernel(tol: Optional[int] = None) -> Fixture:
+    target_rank = 5
+    # fmt: off
+    sparse_matrix = np.array([
+        [3, 2, 2],
+        [2, 3, 1]
+    ])
+    # fmt: on
+
+    mocked_input = KernelInputType(
+        sparse_matrix, sparse_matrix, target_rank, SVDStrategy.FULL, tol
+    )
+    mock_kernel = TestKernel(mocked_input)
+    return (mocked_input, mock_kernel)
+
+
+@fixture
+def test_kernel_fix() -> Fixture:
+    return make_test_kernel()
+
+
+@fixture
+def test_kernel_fix_tol() -> Fixture:
+    return make_test_kernel(5)
+
+
 ## Computing max iterations
 
 
@@ -61,6 +89,39 @@ def test_compute_max_iterations_defaults_to_rank() -> None:
     assert rcvd == 100 * target_rank
 
 
+## Final reporting
+
+
+@patch(f"{PKG}.time")
+def test_do_final_report_computes_time(
+    mock_time: Mock, caplog: LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.INFO)
+    mock_data_return = cast(BaseModelFreeKernelReturnType, Mock)
+    mock_report = Mock()
+    mock_report.summary = "Complete"
+    mock_report.data = mock_data_return
+
+    mock_kernel = Mock()
+    mock_kernel.report = lambda: mock_report
+    mock_kernel.elapsed_iterations = 8
+
+    test_loop_start = 20.0
+    test_run_start = 10.0
+    mock_time.perf_counter = lambda: test_loop_start + (
+        10.0 * mock_kernel.elapsed_iterations
+    )
+
+    res = do_final_report(
+        test_loop_start, test_run_start, cast(KernelBase, mock_kernel)
+    )
+    assert res == mock_data_return
+    assert "Complete" in caplog.text
+    assert f"Initialization took {test_loop_start - test_run_start}" in caplog.text
+    assert "loop took 80.0" in caplog.text
+    assert "(10.0/ea)" in caplog.text
+
+
 ## Actual decompose loop
 
 
@@ -71,25 +132,17 @@ def test_decompose_throws_if_input_has_negative_elements() -> None:
 
 
 @patch(f"{PKG}.instantiate_kernel")
-def test_decompose_obeys_max_iterations(mock_get_kernel: Mock) -> None:
-    target_rank = 5
+def test_decompose_obeys_max_iterations(
+    mock_get_kernel: Mock, test_kernel_fix: Fixture
+) -> None:
+    (indata, test_kernel) = test_kernel_fix
+
+    mock_get_kernel.return_value = test_kernel
+
     max_iterations = 10
-    # fmt: off
-    sparse_matrix = np.array([
-        [3, 2, 2],
-        [2, 3, 1]
-    ])
-    # fmt: on
-
-    mocked_input = KernelInputType(
-        sparse_matrix, sparse_matrix, target_rank, SVDStrategy.FULL, None
-    )
-    mock_kernel = TestKernel(mocked_input)
-    mock_get_kernel.return_value = mock_kernel
-
     result = decompose(
-        sparse_matrix,
-        target_rank,
+        indata.sparse_matrix_X,
+        indata.target_rank,
         kernel_strategy=KernelStrategy.TEST,
         initialization=InitializationStrategy.COPY,
         svd_strategy=SVDStrategy.FULL,
@@ -100,43 +153,36 @@ def test_decompose_obeys_max_iterations(mock_get_kernel: Mock) -> None:
     # (This is just a check on the mocks)
     passed_input = mock_get_kernel.call_args.args[1]
     np.testing.assert_array_equal(
-        mocked_input.sparse_matrix_X, passed_input.sparse_matrix_X
+        test_kernel.sparse_matrix_X, passed_input.sparse_matrix_X
     )
     np.testing.assert_array_equal(
-        mocked_input.low_rank_candidate_L, passed_input.low_rank_candidate_L
+        test_kernel.low_rank_candidate_L, passed_input.low_rank_candidate_L
     )
-    assert mocked_input.target_rank == passed_input.target_rank
-    assert mocked_input.svd_strategy == passed_input.svd_strategy
+    assert indata.target_rank == passed_input.target_rank
+    assert indata.svd_strategy == passed_input.svd_strategy
     assert passed_input.tolerance is None
 
-    assert mock_kernel.elapsed_iterations == max_iterations
-    np.testing.assert_allclose(sparse_matrix, result.factors[0] @ result.factors[1])
+    assert test_kernel.elapsed_iterations == max_iterations
+    np.testing.assert_allclose(
+        test_kernel.sparse_matrix_X, result.factors[0] @ result.factors[1]
+    )
 
 
 @patch(f"{PKG}.instantiate_kernel")
-def test_decompose_stops_when_error_within_tolerance(mock_get_kernel: Mock) -> None:
-    tolerance = 5
-    target_rank = 5
-    # fmt: off
-    sparse_matrix = np.array([
-        [3, 2, 2],
-        [2, 3, 1]
-    ])
-    # fmt: on
-
-    mocked_input = KernelInputType(
-        sparse_matrix, sparse_matrix, target_rank, SVDStrategy.FULL, tolerance
-    )
-    mock_kernel = TestKernel(mocked_input)
-    mock_get_kernel.return_value = mock_kernel
+def test_decompose_stops_when_error_within_tolerance(
+    mock_get_kernel: Mock, test_kernel_fix_tol: Fixture
+) -> None:
+    (indata, kernel) = test_kernel_fix_tol
+    assert indata.tolerance == 5
+    mock_get_kernel.return_value = kernel
 
     _ = decompose(
-        sparse_matrix,
-        target_rank,
+        indata.sparse_matrix_X,
+        indata.target_rank,
         kernel_strategy=KernelStrategy.TEST,
-        tolerance=tolerance,
+        tolerance=indata.tolerance,
     )
-    assert mock_kernel.elapsed_iterations == TEST_KERNEL_TOLERANCE_ITERATIONS
+    assert kernel.elapsed_iterations == TEST_KERNEL_TOLERANCE_ITERATIONS
 
 
 def test_decompose_honors_verbosity(caplog: LogCaptureFixture) -> None:
@@ -155,4 +201,24 @@ def test_decompose_honors_verbosity(caplog: LogCaptureFixture) -> None:
     assert "Initiating run" in caplog.text
 
 
-# Could add some tests that the timing features are actually working
+@patch(f"{PKG}.instantiate_kernel")
+@patch(f"{PKG}.get_diagnostic_fn")
+def test_decompose_calls_diagnostic_callback(
+    mock_get_diag: Mock, mock_get_kernel: Mock, test_kernel_fix: Fixture
+) -> None:
+    (indata, kernel) = test_kernel_fix
+    mock_get_kernel.return_value = kernel
+    mock_diag_fn = Mock()
+    mock_get_diag.return_value = mock_diag_fn
+
+    max_iterations = 10
+    _ = decompose(
+        indata.sparse_matrix_X,
+        indata.target_rank,
+        kernel_strategy=KernelStrategy.TEST,
+        initialization=InitializationStrategy.COPY,
+        svd_strategy=SVDStrategy.FULL,
+        manual_max_iterations=max_iterations,
+    )
+
+    assert mock_diag_fn.call_count == max_iterations

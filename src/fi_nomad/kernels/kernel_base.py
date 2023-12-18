@@ -6,14 +6,19 @@ Classes:
 
 """
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Optional, Union
+from pathlib import Path
+import logging
 
 from fi_nomad.types import (
     FloatArrayType,
     KernelInputType,
     KernelReturnType,
     SVDStrategy,
+    DiagnosticLevel,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class KernelBase(ABC):
@@ -22,6 +27,7 @@ class KernelBase(ABC):
     Every kernel is expected to implement three methods:
     - A step method for a single iteration of its algorithm
     - A "running report" that returns a string (possibly empty) for per-iteration output
+    - A per-iteration diagnostic data output method
     - A report method for returning a summary string and the final data set
 
     Additionally, the class as a whole has members representing the initialization
@@ -71,9 +77,42 @@ class KernelBase(ABC):
         """
         raise NotImplementedError
 
+    def per_iteration_diagnostic(
+        self,
+        *,
+        diagnostic_level: DiagnosticLevel = DiagnosticLevel.NONE,
+        out_dir: Optional[Path],
+    ) -> None:
+        """Base method for kernel-specific per-iteration diagnostic output.
+
+        Implementation is not required as many kernels may not make use of
+        this functionality.
+
+        Note: The actual main loop will create a closure over the diagnostic
+        level and output directory parameters at the time of kernel instantiation.
+        Individual kernels should *not* expect to be able to meaningfully change
+        those values during the course of algorithm execution, even though the
+        parameters will be provided at each iteration.
+
+        Args:
+            out_dir: A path where data files may be written. Guaranteed to have
+            existed at the time the decompose loop began.
+            diagnostic_level: Controls the level of diagnostic information
+            requested; kernels may interpret this as appropriate.
+            Defaults to DiagnosticLevel.NONE.
+        """
+        # We would prefer not to take the extra dependencies, but it's
+        # probably a good thing to warn users if they're doing something
+        # that results in a no-op
+        if diagnostic_level != DiagnosticLevel.NONE:
+            logger.warning(
+                "Per-iteration diagnostic info requested to "
+                + f"{str(out_dir)} but kernel does not support it."
+            )
+
     @abstractmethod
     def report(self) -> KernelReturnType:  # pragma: no cover
-        """Base mtehod to return decomposition results and a summary.
+        """Base method to return decomposition results and a summary.
 
         Raises:
             NotImplementedError: Method is abstract.
