@@ -43,3 +43,13 @@ class KernelStrategy(Enum):
     BASE_MODEL_FREE = 2
     GAUSSIAN_MODEL_SINGLE_VARIANCE = 3
     GAUSSIAN_MODEL_ROWWISE_VARIANCE = 4
+
+
+class DiagnosticLevel(Enum):
+    """Defined verbosity or detail levels for per-iteration kernel reporting."""
+
+    NONE = 0
+    MINIMAL = 10
+    MODERATE = 50
+    HIGH = 100
+    EXTREME = 200

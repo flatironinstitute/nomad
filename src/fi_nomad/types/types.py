@@ -4,12 +4,20 @@ Classes:
     DecomposeInput: Nominal structured input for decompose loop. Not used.
 
 """
-from typing import NamedTuple, Union
+from typing import NamedTuple, Optional
 import numpy as np
 import numpy.typing as npt
-from .enums import KernelStrategy, SVDStrategy, InitializationStrategy
+from .enums import KernelStrategy, SVDStrategy, InitializationStrategy, DiagnosticLevel
 
 FloatArrayType = npt.NDArray[np.float_]
+
+
+class DiagnosticDataConfig(NamedTuple):
+    """Data object for configuring per-iteration diagnostic data output."""
+
+    diagnostic_level: DiagnosticLevel
+    diagnostic_output_basedir: str
+    use_exact_diagnostic_basepath: bool
 
 
 # Currently unused--may be more trouble than it's worth
@@ -19,8 +27,9 @@ class DecomposeInput(NamedTuple):
     sparse_matrix_X: FloatArrayType
     target_rank: int
     kernel_strategy: KernelStrategy
-    svd_strategy: Union[SVDStrategy, None]
-    initialization: Union[InitializationStrategy, None]
-    tolerance: Union[float, None]
-    manual_max_ierations: Union[int, None]
-    verbose: Union[bool, None]
+    svd_strategy: Optional[SVDStrategy]
+    initialization: Optional[InitializationStrategy]
+    tolerance: Optional[float]
+    manual_max_ierations: Optional[int]
+    verbose: Optional[bool]
+    diagnostic_config: Optional[DiagnosticDataConfig]

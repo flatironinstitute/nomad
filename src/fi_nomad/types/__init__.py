@@ -3,9 +3,14 @@ from .enums import (
     SVDStrategy as SVDStrategy,
     LossType as LossType,
     KernelStrategy as KernelStrategy,
+    DiagnosticLevel as DiagnosticLevel,
 )
 
-from .types import FloatArrayType as FloatArrayType, DecomposeInput as DecomposeInput
+from .types import (
+    FloatArrayType as FloatArrayType,
+    DecomposeInput as DecomposeInput,
+    DiagnosticDataConfig as DiagnosticDataConfig,
+)
 
 
 from .kernelInputTypes import (

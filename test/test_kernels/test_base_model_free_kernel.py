@@ -1,16 +1,23 @@
+from pathlib import Path
 from typing import Tuple, cast
 import numpy as np
 from unittest.mock import Mock, patch
 
-import pytest
+from pytest import LogCaptureFixture, fixture
 from fi_nomad.kernels import BaseModelFree
-from fi_nomad.types import FloatArrayType, KernelInputType, LossType, SVDStrategy
+from fi_nomad.types import (
+    FloatArrayType,
+    KernelInputType,
+    LossType,
+    SVDStrategy,
+    DiagnosticLevel,
+)
 
 Fixture = Tuple[KernelInputType, BaseModelFree]
 PKG = "fi_nomad.kernels.base_model_free"
 
 
-@pytest.fixture
+@fixture
 def fixture_with_tol() -> Fixture:
     sparse = np.eye(3) * 3
     candidate = np.ones(sparse.shape)
@@ -22,7 +29,7 @@ def fixture_with_tol() -> Fixture:
     return (indata, kernel)
 
 
-@pytest.fixture
+@fixture
 def fixture_no_tol() -> Fixture:
     sparse = np.eye(3) * 3
     candidate = np.ones(sparse.shape)
@@ -110,3 +117,16 @@ def test_base_model_free_kernel_final_report(fixture_no_tol: Fixture) -> None:
     kernel.loss = 3.0
     result_2 = kernel.report()
     assert "3.0" in result_2.summary
+
+
+def test_base_model_free_kernel_per_iteration_diagnostic_does_nothing(
+    fixture_no_tol: Fixture, caplog: LogCaptureFixture
+) -> None:
+    (_, kernel) = fixture_no_tol
+    test_path_str = "test-path"
+    test_path = Path(test_path_str)
+    kernel.per_iteration_diagnostic(
+        diagnostic_level=DiagnosticLevel.MINIMAL, out_dir=test_path
+    )
+    assert "Per-iteration diagnostic" in caplog.text
+    assert f"{test_path_str}" in caplog.text

@@ -5,7 +5,7 @@ Functions:
 
 """
 
-from typing import Optional, Union
+from typing import Optional
 import time
 import logging
 import numpy as np
@@ -18,9 +18,11 @@ from fi_nomad.types import (
     KernelReturnDataType,
     KernelStrategy,
     SVDStrategy,
+    DiagnosticDataConfig,
 )
+from fi_nomad.kernels import KernelBase
 from fi_nomad.util import initialize_candidate
-from fi_nomad.util.factory_util import instantiate_kernel
+from fi_nomad.util.factory_util import instantiate_kernel, get_diagnostic_fn
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,33 @@ def compute_max_iterations(
     return 100 * target_rank
 
 
+def do_final_report(
+    loop_start_time: float, run_start_time: float, kernel: KernelBase
+) -> KernelReturnDataType:
+    """Calls kernel final report, computes timings and returns kernel data.
+
+    Args:
+        loop_start_time: Timestamp of main loop start
+        run_start_time: Timestamp of initialization start
+        kernel: The instantiated kernel object used during the main loop
+
+    Returns:
+        The data returned by the instantiated kernel.
+    """
+    end_time = time.perf_counter()
+    init_e = loop_start_time - run_start_time
+    loop_e = end_time - loop_start_time
+    per_loop_e = loop_e / (
+        kernel.elapsed_iterations if kernel.elapsed_iterations > 0 else 1
+    )
+    result = kernel.report()
+    logger.info(result.summary)
+    logger.info(
+        f"\tInitialization took {init_e} loop took {loop_e} overall ({per_loop_e}/ea)"
+    )
+    return result.data
+
+
 def decompose(
     sparse_matrix_X: FloatArrayType,
     target_rank: int,
@@ -65,11 +94,12 @@ def decompose(
     *,
     svd_strategy: SVDStrategy = SVDStrategy.RANDOM_TRUNCATED,
     initialization: InitializationStrategy = InitializationStrategy.BROADCAST_MEAN,
-    initial_guess_matrix: Union[FloatArrayType, None] = None,
+    initial_guess_matrix: Optional[FloatArrayType] = None,
     kernel_params: Optional[KernelSpecificParameters] = None,
-    tolerance: Union[float, None] = None,
-    manual_max_iterations: Union[int, None] = None,
+    tolerance: Optional[float] = None,
+    manual_max_iterations: Optional[int] = None,
     verbose: bool = False,
+    diagnostic_config: Optional[DiagnosticDataConfig] = None,
 ) -> KernelReturnDataType:
     """Main matrix decomposition loop.
 
@@ -95,6 +125,14 @@ def decompose(
             iterations. If set to None (default), max iterations are set to 100 * target_rank.
         verbose: If set, will log any per-iteration status updates output by the kernel. Defaults to
             False.
+        diagnostic_level: How much per-iteration diagnostic information the kernel should
+            print on each iteration (if supported by the kernel). Defaults to NONE.
+        diagnostic_output_basedir: The base path where kernel diagnostic information, if any,
+            should be output.
+        use_exact_diagnostic_basepath: If True, and the diagnostic output is requested and
+            supported, then the diagnostic base path will be used exactly. If False (the
+            default), the system will create a timestamped subdirectory of the given base
+            directory.
 
     Returns:
         An object with the kernel's final summary description and the low-rank approximation of the
@@ -115,6 +153,7 @@ def decompose(
 
     run_start_time = time.perf_counter()
     kernel = instantiate_kernel(kernel_strategy, kernel_input, kernel_params)
+    output_diagnostic_data = get_diagnostic_fn(kernel, diagnostic_config)
 
     loop_start_time = time.perf_counter()
     while kernel.elapsed_iterations < max_iterations:
@@ -124,20 +163,9 @@ def decompose(
         running_report = kernel.running_report()
         if running_report != "":
             logger.info(running_report)
+        output_diagnostic_data()
         if tolerance is not None and kernel.loss < tolerance:
             break
 
-    end_time = time.perf_counter()
-
-    init_e = loop_start_time - run_start_time
-    loop_e = end_time - loop_start_time
-    per_loop_e = loop_e / (
-        kernel.elapsed_iterations if kernel.elapsed_iterations > 0 else 1
-    )
-    result = kernel.report()
-    logger.info(result.summary)
-    logger.info(
-        f"\tInitialization took {init_e} loop took {loop_e} overall ({per_loop_e}/ea)"
-    )
-
-    return result.data
+    data = do_final_report(loop_start_time, run_start_time, kernel)
+    return data
