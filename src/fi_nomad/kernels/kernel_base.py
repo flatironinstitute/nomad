@@ -48,6 +48,8 @@ class KernelBase(ABC):
         self.target_rank: int = indata.target_rank
         self.svd_strategy: SVDStrategy = indata.svd_strategy
         self.tolerance: Union[float, None] = indata.tolerance
+        self.diagnostic_level: DiagnosticLevel = DiagnosticLevel.NONE
+        self.out_dir: Optional[Path] = None
 
     def increment_elapsed(self) -> None:
         """Function to increment elapsed iterations."""
@@ -77,37 +79,26 @@ class KernelBase(ABC):
         """
         raise NotImplementedError
 
-    def per_iteration_diagnostic(
-        self,
-        *,
-        diagnostic_level: DiagnosticLevel = DiagnosticLevel.NONE,
-        out_dir: Optional[Path],
-    ) -> None:
+    def per_iteration_diagnostic(self) -> None:
         """Base method for kernel-specific per-iteration diagnostic output.
 
         Implementation is not required as many kernels may not make use of
         this functionality.
 
-        Note: The actual main loop will create a closure over the diagnostic
-        level and output directory parameters at the time of kernel instantiation.
-        Individual kernels should *not* expect to be able to meaningfully change
-        those values during the course of algorithm execution, even though the
-        parameters will be provided at each iteration.
-
-        Args:
-            out_dir: A path where data files may be written. Guaranteed to have
-            existed at the time the decompose loop began.
-            diagnostic_level: Controls the level of diagnostic information
-            requested; kernels may interpret this as appropriate.
-            Defaults to DiagnosticLevel.NONE.
+        Note: If caller does not configure diagnostics or requests a
+        diagnostic level of NONE, this method will be replaced in the
+        factory by a no-op. If execution actually enters the implementation,
+        then self.diagnostic_level should not be NONE and self.out_dir should
+        be set to an appropriate output directory (unless the values have
+        been changed mid-execution).
         """
         # We would prefer not to take the extra dependencies, but it's
         # probably a good thing to warn users if they're doing something
         # that results in a no-op
-        if diagnostic_level != DiagnosticLevel.NONE:
+        if self.diagnostic_level != DiagnosticLevel.NONE:
             logger.warning(
                 "Per-iteration diagnostic info requested to "
-                + f"{str(out_dir)} but kernel does not support it."
+                + f"{str(self.out_dir)} but kernel does not support it."
             )
 
     @abstractmethod

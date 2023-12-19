@@ -119,14 +119,14 @@ def test_base_model_free_kernel_final_report(fixture_no_tol: Fixture) -> None:
     assert "3.0" in result_2.summary
 
 
-def test_base_model_free_kernel_per_iteration_diagnostic_does_nothing(
+def test_base_model_free_kernel_per_iteration_diagnostic_calls_base(
     fixture_no_tol: Fixture, caplog: LogCaptureFixture
 ) -> None:
     (_, kernel) = fixture_no_tol
     test_path_str = "test-path"
     test_path = Path(test_path_str)
-    kernel.per_iteration_diagnostic(
-        diagnostic_level=DiagnosticLevel.MINIMAL, out_dir=test_path
-    )
+    kernel.out_dir = test_path
+    kernel.diagnostic_level = DiagnosticLevel.MINIMAL
+    kernel.per_iteration_diagnostic()
     assert "Per-iteration diagnostic" in caplog.text
     assert f"{test_path_str}" in caplog.text

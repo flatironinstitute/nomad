@@ -73,6 +73,7 @@ ignore = "__init__.py"
 disable = """
     too-many-arguments,
     too-many-locals,
+    too-many-instance-attributes,
     logging-fstring-interpolation,
     logging-not-lazy
 """
