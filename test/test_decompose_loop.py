@@ -14,6 +14,8 @@ from fi_nomad.types import (
     KernelReturnType,
     KernelStrategy,
     SVDStrategy,
+    DiagnosticDataConfig,
+    DiagnosticLevel,
 )
 
 from fi_nomad.util import two_part_factor
@@ -202,14 +204,14 @@ def test_decompose_honors_verbosity(caplog: LogCaptureFixture) -> None:
 
 
 @patch(f"{PKG}.instantiate_kernel")
-@patch(f"{PKG}.get_diagnostic_fn")
-def test_decompose_calls_diagnostic_callback(
-    mock_get_diag: Mock, mock_get_kernel: Mock, test_kernel_fix: Fixture
+def test_decompose_calls_diagnostic_output_fn(
+    mock_get_kernel: Mock, test_kernel_fix: Fixture
 ) -> None:
     (indata, kernel) = test_kernel_fix
+    mock_per_iter_fn = Mock()
+    kernel.per_iteration_diagnostic = mock_per_iter_fn  # type: ignore[method-assign]
+    diag_config = DiagnosticDataConfig(DiagnosticLevel.EXTREME, ".", True)
     mock_get_kernel.return_value = kernel
-    mock_diag_fn = Mock()
-    mock_get_diag.return_value = mock_diag_fn
 
     max_iterations = 10
     _ = decompose(
@@ -219,6 +221,7 @@ def test_decompose_calls_diagnostic_callback(
         initialization=InitializationStrategy.COPY,
         svd_strategy=SVDStrategy.FULL,
         manual_max_iterations=max_iterations,
+        diagnostic_config=diag_config,
     )
 
-    assert mock_diag_fn.call_count == max_iterations
+    assert mock_per_iter_fn.call_count == max_iterations

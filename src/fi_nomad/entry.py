@@ -22,7 +22,7 @@ from fi_nomad.types import (
 )
 from fi_nomad.kernels import KernelBase
 from fi_nomad.util import initialize_candidate
-from fi_nomad.util.factory_util import instantiate_kernel, get_diagnostic_fn
+from fi_nomad.util.factory_util import instantiate_kernel
 
 logger = logging.getLogger(__name__)
 
@@ -152,8 +152,12 @@ def decompose(
     )
 
     run_start_time = time.perf_counter()
-    kernel = instantiate_kernel(kernel_strategy, kernel_input, kernel_params)
-    output_diagnostic_data = get_diagnostic_fn(kernel, diagnostic_config)
+    kernel = instantiate_kernel(
+        kernel_strategy,
+        kernel_input,
+        kernel_params=kernel_params,
+        diagnostic_config=diagnostic_config,
+    )
 
     loop_start_time = time.perf_counter()
     while kernel.elapsed_iterations < max_iterations:
@@ -163,7 +167,7 @@ def decompose(
         running_report = kernel.running_report()
         if running_report != "":
             logger.info(running_report)
-        output_diagnostic_data()
+        kernel.per_iteration_diagnostic()
         if tolerance is not None and kernel.loss < tolerance:
             break
 
