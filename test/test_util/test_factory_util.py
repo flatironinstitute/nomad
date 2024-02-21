@@ -30,17 +30,6 @@ def test_insantiate_kernel_throws_on_instantiation_failure(mock_base: Mock) -> N
         _ = instantiate_kernel(KernelStrategy.BASE_MODEL_FREE, mock_data_in)
 
 
-def test_instantiate_kernel_throws_on_unsupported_feature() -> None:
-    mock_data_in = Mock()
-    some_non_null_value = 0.5
-    with raises(NotImplementedError):
-        _ = instantiate_kernel(
-            KernelStrategy.BASE_MODEL_FREE,
-            mock_data_in,
-            kernel_params=some_non_null_value,
-        )
-
-
 @patch(f"{PKG}.RowwiseVarianceGaussianModelKernel", autospec=True)
 @patch(f"{PKG}.SingleVarianceGaussianModelKernel", autospec=True)
 @patch(f"{PKG}.BaseModelFree", autospec=True)

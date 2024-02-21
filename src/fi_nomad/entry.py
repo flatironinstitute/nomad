@@ -161,8 +161,8 @@ def decompose(
 
     loop_start_time = time.perf_counter()
     while kernel.elapsed_iterations < max_iterations:
-        kernel.increment_elapsed()
         kernel.step()
+        kernel.increment_elapsed()
 
         running_report = kernel.running_report()
         if running_report != "":

@@ -1,16 +1,26 @@
 import numpy as np
 import pytest
 from fi_nomad import decompose
-from fi_nomad.types import KernelStrategy
+from fi_nomad.types import (
+    KernelStrategy,
+    Momentum3BlockAdditionalParameters,
+    KernelSpecificParameters,
+)
 from fi_nomad.util import compute_loss
+from typing import Tuple
 
 pytestmark = pytest.mark.integration
 
-all_kernels = [
-    KernelStrategy.BASE_MODEL_FREE,
-    KernelStrategy.GAUSSIAN_MODEL_SINGLE_VARIANCE,
-    KernelStrategy.GAUSSIAN_MODEL_ROWWISE_VARIANCE,
+all_kernels_with_params = [
+    (KernelStrategy.BASE_MODEL_FREE, None),
+    (KernelStrategy.GAUSSIAN_MODEL_SINGLE_VARIANCE, None),
+    (KernelStrategy.GAUSSIAN_MODEL_ROWWISE_VARIANCE, None),
+    (
+        KernelStrategy.MOMENTUM_3_BLOCK_MODEL_FREE,
+        Momentum3BlockAdditionalParameters(momentum_beta=0.7),
+    ),
 ]
+
 BASE_MODEL_FREE_ELEVENS_ATOL = 0.002
 
 # fmt: off
@@ -49,12 +59,17 @@ random_matrix_sparse = np.copy(random_base_matrix)
 random_matrix_sparse[random_matrix_sparse < 0] = 0
 
 
-@pytest.mark.parametrize("kernel", all_kernels)
-def test_random_matrix_recovery(kernel: KernelStrategy) -> None:
+@pytest.mark.parametrize("kernel_with_params", all_kernels_with_params)
+def test_random_matrix_recovery(
+    kernel_with_params: Tuple[KernelStrategy, KernelSpecificParameters]
+) -> None:
+    kernel_strategy, kernel_params = kernel_with_params
+
     result = decompose(
         random_matrix_sparse,
         random_matrix_target_rank,
-        kernel,
+        kernel_strategy,
+        kernel_params=kernel_params,
         tolerance=random_matrix_tolerance,
     )
     low_rank = result.factors[0] @ result.factors[1]
@@ -66,13 +81,21 @@ def test_random_matrix_recovery(kernel: KernelStrategy) -> None:
     np.testing.assert_allclose(lowrank_factored, low_rank)
 
 
-@pytest.mark.parametrize("kernel", all_kernels)
-def test_model_kernel_elevens_matrix_recovery(kernel: KernelStrategy) -> None:
-    result = decompose(eleven_matrix, eleven_matrix_target_rank, kernel)
+@pytest.mark.parametrize("kernel_with_params", all_kernels_with_params)
+def test_model_kernel_elevens_matrix_recovery(
+    kernel_with_params: Tuple[KernelStrategy, KernelSpecificParameters]
+) -> None:
+    kernel_strategy, kernel_params = kernel_with_params
+    result = decompose(
+        eleven_matrix,
+        eleven_matrix_target_rank,
+        kernel_strategy,
+        kernel_params=kernel_params,
+    )
     low_rank = result.factors[0] @ result.factors[1]
     relu_l = np.copy(low_rank)
     relu_l[relu_l < 0] = 0
-    if kernel == KernelStrategy.BASE_MODEL_FREE:
+    if kernel_strategy == KernelStrategy.BASE_MODEL_FREE:
         assert np.allclose(relu_l, eleven_matrix, atol=BASE_MODEL_FREE_ELEVENS_ATOL)
     else:
         assert np.allclose(relu_l, eleven_matrix)
