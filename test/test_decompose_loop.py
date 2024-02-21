@@ -31,7 +31,8 @@ class TestKernel(KernelBase):
         super().__init__(input)
 
     def step(self) -> None:
-        if self.elapsed_iterations >= TEST_KERNEL_TOLERANCE_ITERATIONS:
+        # elapsed_iterations + 1 gives the iteration we're currently in
+        if self.elapsed_iterations + 1 >= TEST_KERNEL_TOLERANCE_ITERATIONS:
             if self.tolerance is not None:
                 self.loss = self.tolerance - 1
 
