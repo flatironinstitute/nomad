@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, Tuple, cast
 import numpy as np
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, call
 from pytest import raises, LogCaptureFixture, fixture
 from fi_nomad.kernels import KernelBase
 
@@ -226,3 +226,31 @@ def test_decompose_calls_diagnostic_output_fn(
     )
 
     assert mock_per_iter_fn.call_count == max_iterations
+
+
+@patch(f"{PKG}.instantiate_kernel")
+def test_kernel_step_called_before_increment_elapsed(
+    mock_get_kernel: Mock, test_kernel_fix: Fixture
+) -> None:
+    (indata, _) = test_kernel_fix
+
+    mock_kernel = Mock()
+    mock_kernel.elapsed_iterations = 0
+    mock_kernel.step = Mock()
+
+    def mock_step() -> None:
+        mock_kernel.elapsed_iterations += 1
+
+    mock_kernel.increment_elapsed = Mock(side_effect=mock_step)
+    mock_get_kernel.return_value = mock_kernel
+
+    decompose(
+        indata.sparse_matrix_X,
+        indata.target_rank,
+        kernel_strategy=KernelStrategy.TEST,
+        tolerance=indata.tolerance,
+        manual_max_iterations=1,
+    )
+
+    expected_calls = [call.step(), call.increment_elapsed()]
+    mock_kernel.assert_has_calls(expected_calls, any_order=False)
