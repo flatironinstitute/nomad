@@ -5,6 +5,7 @@ Functions:
     two_part_factor: Factor M x N matrix of rank r into A (M x r), B (r x N)
 
 """
+
 from typing import Tuple
 import numpy as np
 from sklearn.decomposition import TruncatedSVD  # type: ignore

@@ -4,6 +4,7 @@ Classes:
     RowwiseVarianceGaussianModelKernel: Gaussian-model kernel with per-row variance.
 
 """
+
 from typing import Tuple, cast
 import logging
 import numpy as np

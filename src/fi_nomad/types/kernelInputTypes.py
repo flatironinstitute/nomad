@@ -5,6 +5,7 @@ Classes:
     KernelInputType: Standard data object for initializing kernels.
 
 """
+
 from typing import NamedTuple, Union
 from .types import FloatArrayType
 from .enums import SVDStrategy

@@ -5,6 +5,7 @@ Classes:
     KernelBase: Abstract base class for kernel classes.
 
 """
+
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 from pathlib import Path

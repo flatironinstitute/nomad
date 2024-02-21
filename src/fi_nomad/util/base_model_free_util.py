@@ -5,6 +5,7 @@ Functions:
     construct_utility: Construct candidate by enforcing base matrix constraints on an SVD result.
 
 """
+
 import numpy as np
 from fi_nomad.types import FloatArrayType
 

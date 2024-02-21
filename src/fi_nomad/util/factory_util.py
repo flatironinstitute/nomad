@@ -5,6 +5,7 @@ Functions:
     do_diagnostic_configuration: Configure kernel for per-iteration diagnostic output.
 
 """
+
 from typing import Optional, cast
 
 from fi_nomad.kernels import (

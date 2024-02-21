@@ -8,6 +8,7 @@ Classes:
     KernelReturnType: Combination of data and summary string.
 
 """
+
 from abc import ABC
 from typing import Tuple, Union
 from dataclasses import dataclass
