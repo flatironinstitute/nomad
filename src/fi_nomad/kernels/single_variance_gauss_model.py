@@ -4,6 +4,7 @@ Classes:
     SingleVarianceGaussianModelKernel: Gaussian-model kernel with scalar variance.
 
 """
+
 from typing import cast
 import logging
 import numpy as np
