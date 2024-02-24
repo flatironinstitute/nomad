@@ -12,23 +12,25 @@ from fi_nomad.types import FloatArrayType
 
 
 def _compute_least_squares_solution(
-    A: FloatArrayType, B: FloatArrayType
+    matrix_A: FloatArrayType, matrix_B: FloatArrayType
 ) -> FloatArrayType:
     """Matrix least squares solver
 
     Solves argmin_{X} || B - A @ X ||^{2}_{F}
 
     Args:
-        A: Coefficient matrix A of shape (m, n)
-        B: Matrix of shape (m, k)
+        matrix_A: Coefficient matrix A of shape (m, n)
+        matrix_B: Matrix of shape (m, k)
 
     Returns:
         Least squares solution X of shape (n, k)
     """
-    return np.linalg.lstsq(A, B, rcond=None)[0]
+    return np.linalg.lstsq(matrix_A, matrix_B, rcond=None)[0]
 
 
-def update_W(H: FloatArrayType, Z: FloatArrayType) -> FloatArrayType:
+def update_W(
+    candidate_factor_H: FloatArrayType, utility_matrix_Z: FloatArrayType
+) -> FloatArrayType:
     """Update candidate factor W
 
     Solves argmin_{W} || Z - W @ H ||^{2}_{F}
@@ -37,16 +39,21 @@ def update_W(H: FloatArrayType, Z: FloatArrayType) -> FloatArrayType:
     the candidate factor matrix W.
 
     Args:
-        H: Candidate factor for the low-rank approximation (r, p)
-        Z: Utility matrix Z of shape (n, p)
+        candidate_factor_H: Candidate factor for the low-rank approximation (r, p)
+        utility_matrix_Z: Utility matrix Z of shape (n, p)
 
     Returns:
         Updated candidate factor matrix W of shape (n, r)
     """
-    return _compute_least_squares_solution(H @ H.T, H @ Z.T).T
+    return _compute_least_squares_solution(
+        candidate_factor_H @ candidate_factor_H.T,
+        candidate_factor_H @ utility_matrix_Z.T,
+    ).T
 
 
-def update_H(W: FloatArrayType, Z: FloatArrayType) -> FloatArrayType:
+def update_H(
+    candidate_factor_W: FloatArrayType, utility_matrix_Z: FloatArrayType
+) -> FloatArrayType:
     """Update candidate factor H
 
     Solves argmin_{H} || Z - W @ H ||^{2}_{F}
@@ -55,10 +62,13 @@ def update_H(W: FloatArrayType, Z: FloatArrayType) -> FloatArrayType:
     the candidate factor matrix H
 
     Args:
-        W: Candidate factor for the low-rank approximation (n, r)
-        Z: Utility matrix Z of shape (n, p)
+        candidate_factor_W: Candidate factor for the low-rank approximation (n, r)
+        utility_matrix_Z: Utility matrix Z of shape (n, p)
 
     Returns:
         Updated candidate factor matrix H of shape (r, p)
     """
-    return _compute_least_squares_solution(W.T @ W, W.T @ Z)
+    return _compute_least_squares_solution(
+        candidate_factor_W.T @ candidate_factor_W,
+        candidate_factor_W.T @ utility_matrix_Z,
+    )

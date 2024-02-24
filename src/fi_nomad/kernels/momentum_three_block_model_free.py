@@ -21,6 +21,7 @@ from fi_nomad.types import (
     KernelReturnType,
     LossType,
 )
+
 from fi_nomad.util import compute_loss, two_part_factor_known_rank
 
 
@@ -40,16 +41,16 @@ class Momentum3BlockModelFreeKernel(KernelBase):
             self.candidate_factor_H = custom_params.candidate_factor_H0
         else:
             # if W0, H0 are not given, factorize low_rank_candidate_L
-            (W0, H0) = two_part_factor_known_rank(
+            (candidate_factor_W0, candidate_factor_H0) = two_part_factor_known_rank(
                 self.low_rank_candidate_L,
                 self.target_rank,
             )
-            self.candidate_factor_W = W0
-            self.candidate_factor_H = H0
+            self.candidate_factor_W = candidate_factor_W0
+            self.candidate_factor_H = candidate_factor_H0
 
         self.momentum_beta = custom_params.momentum_beta
-        self.utility_matrix_Z = indata.sparse_matrix_X.copy()
-        self.previous_low_rank_candidate_L = None
+        self.utility_matrix_Z = indata.sparse_matrix_X
+        self.previous_low_rank_candidate_L = self.low_rank_candidate_L
 
     def step(self) -> None:
         """Single step of the momentum 3-block model-free low-rank approximation estimator.

@@ -29,7 +29,7 @@ def test_construct_utility() -> None:
     np.testing.assert_array_equal(expected_matrix, result)
 
 
-def test_apply_momentum():
+def test_apply_momentum() -> None:
     # fmt: off
     current_matrix = np.array([
         [1, 4, 2],

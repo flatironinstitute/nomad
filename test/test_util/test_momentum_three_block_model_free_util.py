@@ -7,7 +7,7 @@ from fi_nomad.util.momentum_three_block_model_free_util import (
 )
 
 
-def test_compute_least_squares_solution():
+def test_compute_least_squares_solution() -> None:
     # fmt: off
     X = np.asarray([
         [1.0, 2.0], 
@@ -24,7 +24,7 @@ def test_compute_least_squares_solution():
     np.testing.assert_array_almost_equal(actual_result, expected_result)
 
 
-def test_update_W():
+def test_update_W() -> None:
     # fmt: off
     H = np.array([
         [1.0, 2.0], 
@@ -42,7 +42,7 @@ def test_update_W():
     np.testing.assert_array_almost_equal(actual_result, expected_result)
 
 
-def test_update_H():
+def test_update_H() -> None:
     # fmt: off
     W = np.array([
         [1.0, 2.0], 

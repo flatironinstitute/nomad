@@ -3,7 +3,8 @@ naive kernels are added.
 
 Functions:
     construct_utility: Construct candidate by enforcing base matrix constraints on an SVD result.
-    apply_momentum: Applies momentum term on a matrix using the difference from the previous to the current solution.
+    apply_momentum: Applies momentum term on a matrix using the difference from the previous 
+        to the current solution.
 """
 
 import numpy as np
@@ -42,7 +43,7 @@ def construct_utility(
 
 
 def apply_momentum(
-    X: FloatArrayType, previous_X: FloatArrayType, beta: float
+    current_X: FloatArrayType, previous_X: FloatArrayType, beta: float
 ) -> FloatArrayType:
     """Applies momentum on a matrix X
 
@@ -54,7 +55,7 @@ def apply_momentum(
     X = X + beta(X - previous_X)
 
     Args:
-        X: Matrix at the current iteration
+        current_X: Matrix at the current iteration
         previous_X: Matrix at the previous iteration
         beta: Momentum parameter. Scalar between 0 and 1 that controls the
             extrapolation size.
@@ -71,4 +72,4 @@ def apply_momentum(
         post_momentum_X = apply_momentum(X, X_previous, beta=1.0)
         assert np.array_equal(X, post_momentum_X)
     """
-    return X + beta * (X - previous_X)
+    return current_X + beta * (current_X - previous_X)
