@@ -25,6 +25,7 @@ from fi_nomad.types import (
     KernelSpecificParameters,
     KernelStrategy,
     DiagnosticDataConfig,
+    Momentum3BlockAdditionalParameters,
 )
 
 
@@ -64,7 +65,14 @@ def instantiate_kernel(
     elif s == KernelStrategy.GAUSSIAN_MODEL_ROWWISE_VARIANCE:
         kernel = RowwiseVarianceGaussianModelKernel(data_in)
     elif s == KernelStrategy.MOMENTUM_3_BLOCK_MODEL_FREE:
-        kernel = Momentum3BlockModelFreeKernel(data_in, kernel_params)
+        if isinstance(kernel_params, Momentum3BlockAdditionalParameters):
+            # if we don't check this, mypy complains
+            kernel = Momentum3BlockModelFreeKernel(data_in, kernel_params)
+        else:
+            raise TypeError(
+                "kernel_params must be an instance of Momentum3BlockAdditionalParameters \
+                    for MOMENTUM_3_BLOCK_MODEL_FREE strategy."
+            )
     else:
         raise ValueError(f"Unsupported kernel strategy {s}")
     if kernel is None:
