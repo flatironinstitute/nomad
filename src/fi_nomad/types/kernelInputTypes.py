@@ -28,7 +28,7 @@ class Momentum3BlockAdditionalParameters(NamedTuple):
     W0 and H0 are candidate low rank factors (opposed to initialization using
     low-rank candidate matrix L). beta is the momentum hyperparameter."""
 
-    momentum_beta: float
+    momentum_beta: float = 0.7
     candidate_factor_W0: Optional[FloatArrayType] = None
     candidate_factor_H0: Optional[FloatArrayType] = None
 
