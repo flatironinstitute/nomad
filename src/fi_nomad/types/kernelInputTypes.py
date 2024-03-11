@@ -33,4 +33,4 @@ class Momentum3BlockAdditionalParameters(NamedTuple):
     candidate_factor_H0: Optional[FloatArrayType] = None
 
 
-KernelSpecificParameters = Union[float, int, Momentum3BlockAdditionalParameters]
+KernelSpecificParameters = Union[Momentum3BlockAdditionalParameters]
