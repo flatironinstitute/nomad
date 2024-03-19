@@ -3,6 +3,7 @@
 Functions:
     find_low_rank: Compute low-rank approximation to input matrix using stated SVD strategy.
     two_part_factor: Factor M x N matrix of rank r into A (M x r), B (r x N)
+    two_part_factor_known_rank: Factor M x N matrix into A (M x r), B (r x N) with known rank r.
 
 """
 
@@ -144,7 +145,7 @@ def two_part_factor(matrix: FloatArrayType) -> Tuple[FloatArrayType, FloatArrayT
 def two_part_factor_known_rank(
     matrix: FloatArrayType, rank: int
 ) -> Tuple[FloatArrayType, FloatArrayType]:
-    """Factor matrix into two rectangular matrices with inner dimension matching its rank.
+    """Factor matrix into two rectangular matrices with inner dimension `rank`
 
     Args:
         matrix: Low-rank matrix to factor into two

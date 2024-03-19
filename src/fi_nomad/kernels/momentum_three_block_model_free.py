@@ -1,7 +1,7 @@
 """Defines the momentum 3-block model-free kernel.
 
 Classes:
-    Momentum3BlockModelFreeKernel: XXXXX.
+    Momentum3BlockModelFreeKernel: Momentum 3-block model-free algorithm as described in Seraghiti et. al. (2023).
 
 """
 
@@ -26,7 +26,22 @@ from fi_nomad.util import compute_loss, two_part_factor_known_rank
 
 
 class Momentum3BlockModelFreeKernel(KernelBase):
-    """Momentum 3-block model-free algorithm as described in Seraghiti et. al. (2023)"""
+    """Momentum 3-block model-free algorithm as described in Seraghiti et. al. (2023)
+
+    This is an extension of the base model-free algorithm described in Saul (2022).
+    It makes use of the parametrization :math:`L=WH` to update `W` and `H` separately,
+    thus avoiding computation of the rank-r tSVD, which reduces computational
+    complexity from :math:`O(mnr^2)` to :math:`O(mnr)`. Further, it extrapolates `Z` and `L`
+    using momentum terms with fixed momentum parameter `momentum_beta` to accelerate
+    convergence.
+
+    Note: one can instantiate the kernel by passing both `candidate_factor_W0` and
+        `candidate_factor_H0` (as described in Seraghiti et. al.). In case you
+        don't supply W0 and H0, or just one of them, `low_rank_candidate_L` is
+        factored into W0, H0 which are in turn used to instantiate the kernel. By
+        doing this, we can make use of intialization methods that return the low
+        rank candidate directly.
+    """
 
     def __init__(
         self, indata: KernelInputType, custom_params: Momentum3BlockAdditionalParameters
@@ -53,12 +68,13 @@ class Momentum3BlockModelFreeKernel(KernelBase):
         self.previous_low_rank_candidate_L = self.low_rank_candidate_L
 
     def step(self) -> None:
-        """Single step of the momentum 3-block model-free low-rank approximation estimator.
+        """Single step of the momentum 3-block model-free low-rank approximator.
 
-        XXXXXXXXXXXXXXX
-
-        Note that loss is only computed if an initial tolerance was set; this is an attempt to avoid
-        unnecessary computation, but may be removed in a future version.
+        Each step carries out one construction of the utility matrix (Z) and extrapolates
+        it with a momentum term (Block 1). It then updates candidate factor W (Block 2)
+        and H (Block 3). Finally the low-rank approximation (L) is calculated.
+        Extrapolation of L is done at the very beginning, starting with the second
+        iteration (instead of at the end of each step) to ensure L has rank r.
 
         Returns:
             None
