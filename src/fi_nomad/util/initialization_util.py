@@ -5,6 +5,7 @@ Functions:
     initialize_candidate: Wrapper for initializing low-rank candidate with error handling.
 
 """
+
 from typing import Optional
 import numpy as np
 

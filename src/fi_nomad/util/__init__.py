@@ -1,6 +1,7 @@
 from .decomposition_util import (
     find_low_rank as find_low_rank,
     two_part_factor as two_part_factor,
+    two_part_factor_known_rank as two_part_factor_known_rank,
 )
 from .initialization_util import (
     initialize_low_rank_candidate as initialize_low_rank_candidate,

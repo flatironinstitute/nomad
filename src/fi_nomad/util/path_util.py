@@ -4,6 +4,7 @@ Functions:
     make_path: Makes an output path from a user-specified base.
 
 """
+
 from pathlib import Path
 from datetime import datetime
 from os import path, makedirs

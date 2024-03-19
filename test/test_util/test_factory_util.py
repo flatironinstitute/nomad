@@ -22,23 +22,18 @@ def test_instantiate_kernel_throws_on_unsupported_kernel() -> None:
         _ = instantiate_kernel(KernelStrategy.TEST, mock_data_in)
 
 
+def test_instantiate_kernel_throws_on_non_matching_kernel_params() -> None:
+    mock_data_in = Mock()
+    with raises(TypeError, match="kernel_params"):
+        _ = instantiate_kernel(KernelStrategy.MOMENTUM_3_BLOCK_MODEL_FREE, mock_data_in)
+
+
 @patch(f"{PKG}.BaseModelFree", autospec=True)
 def test_insantiate_kernel_throws_on_instantiation_failure(mock_base: Mock) -> None:
     mock_data_in = Mock()
     mock_base.return_value = None
     with raises(ValueError, match="not initialized"):
         _ = instantiate_kernel(KernelStrategy.BASE_MODEL_FREE, mock_data_in)
-
-
-def test_instantiate_kernel_throws_on_unsupported_feature() -> None:
-    mock_data_in = Mock()
-    some_non_null_value = 0.5
-    with raises(NotImplementedError):
-        _ = instantiate_kernel(
-            KernelStrategy.BASE_MODEL_FREE,
-            mock_data_in,
-            kernel_params=some_non_null_value,
-        )
 
 
 @patch(f"{PKG}.RowwiseVarianceGaussianModelKernel", autospec=True)
