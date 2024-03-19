@@ -7,14 +7,11 @@ Classes:
 """
 
 from fi_nomad.kernels.kernel_base import KernelBase
-
 from fi_nomad.util.model_free_util import construct_utility, apply_momentum
-
 from fi_nomad.util.momentum_three_block_model_free_util import (
     update_W,
     update_H,
 )
-
 from fi_nomad.types import (
     KernelInputType,
     Momentum3BlockModelFreeKernelReturnType,
