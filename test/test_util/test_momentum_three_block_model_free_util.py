@@ -1,5 +1,4 @@
 import numpy as np
-
 from fi_nomad.util.momentum_three_block_model_free_util import (
     _compute_least_squares_solution,
     update_H,
@@ -9,19 +8,23 @@ from fi_nomad.util.momentum_three_block_model_free_util import (
 
 def test_compute_least_squares_solution() -> None:
     # fmt: off
-    X = np.asarray([
+    A = np.asarray([
         [1.0, 2.0], 
         [3.0, 4.0], 
         [5.0, 6.0], 
         [7.0, 8.0]
     ])
-    expected_result = np.asarray([
+
+    X = np.asarray([ # this is our expected result
         [0.5, 0.7], 
         [-0.5, -1.2]
     ])
+
+    B = A @ X
+
     # fmt: on
-    actual_result = _compute_least_squares_solution(X, X @ expected_result)
-    np.testing.assert_array_almost_equal(actual_result, expected_result)
+    actual_result = _compute_least_squares_solution(A, B)
+    np.testing.assert_array_almost_equal(actual_result, X)
 
 
 def test_update_W() -> None:
