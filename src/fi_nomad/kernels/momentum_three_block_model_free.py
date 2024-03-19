@@ -1,7 +1,8 @@
 """Defines the momentum 3-block model-free kernel.
 
 Classes:
-    Momentum3BlockModelFreeKernel: Momentum 3-block model-free algorithm as described in Seraghiti et. al. (2023).
+    Momentum3BlockModelFreeKernel: Momentum 3-block model-free algorithm as described 
+        in Seraghiti et. al. (2023).
 
 """
 
