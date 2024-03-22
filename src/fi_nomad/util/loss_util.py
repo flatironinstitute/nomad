@@ -4,6 +4,7 @@ Functions:
     compute_loss: Computes scalar loss estimate between utility and target matrices.
 
 """
+
 import numpy as np
 
 from fi_nomad.types import FloatArrayType, LossType

@@ -4,6 +4,7 @@ Classes:
     DecomposeInput: Nominal structured input for decompose loop. Not used.
 
 """
+
 from typing import NamedTuple, Optional
 import numpy as np
 import numpy.typing as npt

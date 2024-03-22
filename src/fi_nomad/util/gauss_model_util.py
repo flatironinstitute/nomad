@@ -12,6 +12,7 @@ Functions:
     target_matrix_log_likelihood: Finds log likelihood of target matrix with current parameters.
 
 """
+
 from typing import Union, cast, Any
 import numpy as np
 from scipy.stats import norm as normal  # type: ignore

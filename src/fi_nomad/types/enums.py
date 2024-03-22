@@ -7,6 +7,7 @@ Classes:
     KernelStrategy: Choices of decomposition kernel.
 
 """
+
 from enum import Enum
 
 
